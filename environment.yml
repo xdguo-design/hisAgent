@@ -1,0 +1,24 @@
+name: hisagent
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+    - fastapi==0.109.0
+    - uvicorn==0.27.0
+    - zhipuai==2.1.2
+    - llama-index==0.10.11
+    - llama-index-vector-stores-chroma==0.1.10
+    - llama-index-embeddings-openai==0.1.10
+    - chromadb==0.4.22
+    - pydantic==2.6.0
+    - pydantic-settings==2.1.0
+    - python-multipart==0.0.6
+    - aiofiles==23.2.1
+    - sqlalchemy==2.0.25
+    - alembic==1.13.1
+    - httpx==0.26.0
+    - python-dotenv==1.0.0
+    - pydantic[email]==2.6.0

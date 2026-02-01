@@ -1,0 +1,3321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HIS开发Agent - 管理平台</title>
+    <script src="/static/js/vue.global.prod.js"></script>
+    <script src="/static/js/axios.min.js"></script>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.staticfile.org/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="https://cdn.staticfile.org/marked/12.0.1/marked.min.js"></script>
+    <link href="https://cdn.staticfile.org/highlight.js/11.9.0/styles/github-dark.min.css" rel="stylesheet">
+    <script src="https://cdn.staticfile.org/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root {
+            /* Modern Color Palette - Inspired by Apple & Notion */
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --primary-light: #e0e7ff;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --info: #3b82f6;
+            --info-light: #dbeafe;
+            
+            /* Background Colors */
+            --bg-primary: #fafafa;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f3f4f6;
+            --bg-hover: #f9fafb;
+            
+            /* Text Colors */
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            --text-inverse: #ffffff;
+            
+            /* Border Colors */
+            --border-light: #e5e7eb;
+            --border-medium: #d1d5db;
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            
+            /* Border Radius */
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --radius-xl: 20px;
+            
+            /* Transitions */
+            --transition-fast: 150ms ease;
+            --transition-base: 250ms ease;
+            --transition-slow: 350ms ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container-fluid {
+            padding: 0;
+        }
+
+        .row {
+            margin: 0;
+        }
+
+        .col {
+            padding: 0;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #1e1e2e 0%, #2d2d3f 100%);
+            min-height: 100vh;
+            padding: 24px 0;
+            color: white;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            z-index: 100;
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .sidebar-header {
+            padding: 0 24px 32px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .sidebar-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-header h1 i {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .sidebar-header p {
+            font-size: 13px;
+            opacity: 0.7;
+            margin: 0;
+            font-weight: 400;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 24px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            border-left: 3px solid transparent;
+            margin: 2px 0;
+            position: relative;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 0;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 0 2px 2px 0;
+            transition: height var(--transition-base);
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.95);
+            transform: translateX(2px);
+        }
+
+        .nav-item:hover::before {
+            height: 50%;
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            border-left-color: transparent;
+        }
+
+        .nav-item.active::before {
+            height: 70%;
+        }
+
+        .nav-item i {
+            margin-right: 14px;
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-content {
+            padding: 32px;
+            min-height: 100vh;
+            background: var(--bg-primary);
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+            animation: fadeInDown 0.4s ease;
+            position: relative;
+        }
+
+        .page-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+            font-size: 15px;
+            margin: 0;
+            font-weight: 400;
+        }
+
+        .version-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: var(--shadow-md);
+            letter-spacing: 0.3px;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: none;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 24px;
+            overflow: hidden;
+            transition: all var(--transition-base);
+            border: 1px solid var(--border-light);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-light);
+            padding: 20px 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h5 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        .table {
+            margin: 0;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table thead th {
+            border-top: none;
+            border-bottom: 2px solid var(--border-light);
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            font-weight: 600;
+        }
+
+        .table tbody td {
+            padding: 16px;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .table tbody tr {
+            transition: all var(--transition-fast);
+        }
+
+        .table tbody tr:hover {
+            background: var(--bg-hover);
+            transform: scale(1.002);
+        }
+
+        .table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn i {
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-hover) 0%, #4338ca 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, var(--info) 0%, #2563eb 100%);
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-light);
+            color: var(--text-primary);
+        }
+
+        .btn-outline-primary {
+            background: transparent;
+            color: var(--primary);
+            border: 1.5px solid var(--primary);
+            box-shadow: none;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary-light);
+            color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-outline-danger {
+            background: transparent;
+            color: var(--danger);
+            border: 1.5px solid var(--danger);
+            box-shadow: none;
+        }
+
+        .btn-outline-danger:hover {
+            background: var(--danger-light);
+            color: #dc2626;
+            border-color: #dc2626;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+            gap: 4px;
+        }
+
+        .btn-sm i {
+            font-size: 12px;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-primary {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .badge-success {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .badge-danger {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .badge-warning {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .badge-info {
+            background: var(--info-light);
+            color: var(--info);
+        }
+
+        .badge.bg-success {
+            background: var(--success) !important;
+            color: white !important;
+        }
+
+        .badge.bg-light {
+            background: var(--bg-tertiary) !important;
+            color: var(--text-secondary) !important;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            font-size: 14px;
+            letter-spacing: 0.3px;
+        }
+
+        .form-control {
+            border: 1.5px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            font-size: 14px;
+            transition: all var(--transition-fast);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            background: var(--bg-secondary);
+            outline: none;
+        }
+
+        .form-control::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .form-select {
+            border: 1.5px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            font-size: 14px;
+            transition: all var(--transition-fast);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            background: var(--bg-secondary);
+            outline: none;
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-check-input {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border-medium);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .form-check-label {
+            font-size: 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .modal {
+            display: block;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-dialog {
+            max-width: 600px;
+            margin: 40px auto;
+        }
+
+        .modal-content {
+            border: none;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border: none;
+            padding: 20px 24px;
+            border-radius: 0;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        .btn-close {
+            filter: brightness(0) invert(1);
+            opacity: 0.8;
+            transition: opacity var(--transition-fast);
+        }
+
+        .btn-close:hover {
+            opacity: 1;
+        }
+
+        .modal-body {
+            padding: 24px;
+            background: var(--bg-secondary);
+        }
+
+        .modal-footer {
+            border-top: 1px solid var(--border-light);
+            padding: 20px 24px;
+            background: var(--bg-secondary);
+        }
+
+        .modal-lg {
+            max-width: 800px;
+        }
+
+        .nav-tabs {
+            border-bottom: 2px solid var(--border-light);
+            gap: 8px;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: var(--text-secondary);
+            padding: 12px 20px;
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all var(--transition-fast);
+            background: transparent;
+        }
+
+        .nav-tabs .nav-link:hover {
+            color: var(--primary);
+            background: var(--bg-tertiary);
+        }
+
+        .nav-tabs .nav-link.active {
+            color: var(--primary);
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--primary);
+            margin-bottom: -2px;
+        }
+
+        .list-group-item {
+            border: 1px solid var(--border-light);
+            padding: 12px 16px;
+            transition: all var(--transition-fast);
+        }
+
+        .list-group-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .alert {
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert i {
+            font-size: 18px;
+        }
+
+        .alert-info {
+            background: var(--info-light);
+            color: #1e40af;
+        }
+
+        .alert-warning {
+            background: var(--warning-light);
+            color: #92400e;
+        }
+
+        .alert-success {
+            background: var(--success-light);
+            color: #065f46;
+        }
+
+        .alert-danger {
+            background: var(--danger-light);
+            color: #991b1b;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            text-align: center;
+            border: 1px solid var(--border-light);
+            transition: all var(--transition-base);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+            opacity: 0;
+            transition: opacity var(--transition-base);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 24px;
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-icon.blue { 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        }
+        .stat-icon.green { 
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+        }
+        .stat-icon.orange { 
+            background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .spinner-border {
+            width: 50px;
+            height: 50px;
+            border-width: 3px;
+            border-color: var(--primary-light);
+            border-right-color: var(--primary);
+        }
+
+        .spinner-border-sm {
+            width: 24px;
+            height: 24px;
+            border-width: 2px;
+            border-color: var(--primary-light);
+            border-right-color: var(--primary);
+        }
+
+        .d-none {
+            display: none !important;
+        }
+
+        .d-flex {
+            display: flex !important;
+        }
+
+        .align-items-center {
+            align-items: center !important;
+        }
+
+        .justify-content-between {
+            justify-content: space-between !important;
+        }
+
+        .justify-content-end {
+            justify-content: flex-end !important;
+        }
+
+        .gap-2 {
+            gap: 8px !important;
+        }
+
+        .mb-2 {
+            margin-bottom: 8px !important;
+        }
+
+        .mb-3 {
+            margin-bottom: 16px !important;
+        }
+
+        .mb-4 {
+            margin-bottom: 24px !important;
+        }
+
+        .mt-2 {
+            margin-top: 8px !important;
+        }
+
+        .mt-3 {
+            margin-top: 16px !important;
+        }
+
+        .mt-4 {
+            margin-top: 24px !important;
+        }
+
+        .py-2 {
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+        }
+
+        .py-3 {
+            padding-top: 12px !important;
+            padding-bottom: 12px !important;
+        }
+
+        .py-4 {
+            padding-top: 16px !important;
+            padding-bottom: 16px !important;
+        }
+
+        .px-3 {
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+        }
+
+        .px-4 {
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+        }
+
+        .me-2 {
+            margin-right: 8px !important;
+        }
+
+        .ms-2 {
+            margin-left: 8px !important;
+        }
+
+        .text-muted {
+            color: var(--text-tertiary) !important;
+        }
+
+        .text-center {
+            text-align: center !important;
+        }
+
+        .w-100 {
+            width: 100% !important;
+        }
+
+        .small {
+            font-size: 0.875rem !important;
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -100%;
+                width: 280px;
+                z-index: 1000;
+                transition: left var(--transition-base);
+            }
+
+            .sidebar.show {
+                left: 0;
+            }
+
+            .main-content {
+                padding: 16px;
+            }
+
+            .page-header h1 {
+                font-size: 24px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 700px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            background: var(--bg-secondary);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            background: var(--bg-tertiary);
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: var(--border-medium);
+            border-radius: 3px;
+        }
+
+        .chat-message {
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        .chat-message.user {
+            align-items: flex-end;
+        }
+
+        .chat-message.assistant {
+            align-items: flex-start;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .chat-message.user .message-header {
+            flex-direction: row-reverse;
+        }
+
+        .message-header i {
+            margin: 0 6px;
+            font-size: 16px;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid var(--bg-secondary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .avatar-emoji {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: 2px solid var(--bg-secondary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .avatar-img {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid var(--bg-secondary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .message-role {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .message-content {
+            max-width: 75%;
+            padding: 14px 18px;
+            border-radius: 16px;
+            word-wrap: break-word;
+            line-height: 1.6;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .chat-message.user .message-content {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            color: white;
+            border-bottom-right-radius: 6px;
+            border-bottom-left-radius: 16px;
+        }
+
+        .chat-message.assistant .message-content {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 16px;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif;
+        }
+
+        .chat-message.assistant .message-content pre {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            line-height: 1.6;
+            box-shadow: var(--shadow-sm);
+            color: #e2e8f0;
+        }
+
+        .chat-message.assistant .message-content pre::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .chat-message.assistant .message-content pre::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        .chat-message.assistant .message-content pre::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        .chat-message.assistant .message-content code {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 0.2em 0.5em;
+            border-radius: 4px;
+            font-size: 85%;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            color: var(--primary);
+        }
+
+        .chat-message.assistant .message-content pre code {
+            background: transparent;
+            padding: 0;
+            border-radius: 0;
+            font-size: inherit;
+            color: #e2e8f0;
+        }
+
+        .chat-message.assistant .message-content pre .hljs {
+            background: transparent;
+            color: #e2e8f0;
+        }
+
+        .chat-message.assistant .message-content pre .hljs-keyword {
+            color: #c084fc;
+        }
+
+        .chat-message.assistant .message-content pre .hljs-string {
+            color: #34d399;
+        }
+
+        .chat-message.assistant .message-content pre .hljs-comment {
+            color: #64748b;
+        }
+
+        .chat-message.assistant .message-content pre .hljs-function {
+            color: #60a5fa;
+        }
+
+        .chat-message.assistant .message-content pre .hljs-number {
+            color: #f472b6;
+        }
+
+        .chat-message.assistant .message-content pre .hljs-title {
+            color: #fbbf24;
+        }
+
+        .chat-message.assistant .message-content p {
+            margin: 0 0 16px 0;
+            line-height: 1.7;
+        }
+
+        .chat-message.assistant .message-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .chat-message.assistant .message-content ul, 
+        .chat-message.assistant .message-content ol {
+            margin: 0 0 16px 0;
+            padding-left: 1.8em;
+        }
+
+        .chat-message.assistant .message-content li {
+            margin: 6px 0;
+            line-height: 1.6;
+        }
+
+        .chat-message.assistant .message-content blockquote {
+            margin: 0 0 16px 0;
+            padding: 0 1em;
+            color: var(--text-secondary);
+            border-left: 0.25em solid var(--primary);
+            font-style: italic;
+        }
+
+        .code-block-wrapper {
+            position: relative;
+            margin: 16px 0;
+        }
+
+        .copy-code-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            color: #c9d1d9;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            backdrop-filter: blur(4px);
+        }
+
+        .copy-code-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .copy-code-btn:active {
+            transform: translateY(0);
+        }
+
+        .copy-code-btn.copied {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .chat-input {
+            border-top: 1px solid var(--border-light);
+            padding: 20px;
+            background: var(--bg-secondary);
+        }
+
+        .chat-textarea {
+            resize: none;
+            font-size: 14px;
+            min-height: 80px;
+            max-height: 200px;
+            line-height: 1.5;
+        }
+
+        .chat-textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .chat-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .markdown-content {
+            line-height: 1.7;
+        }
+
+        .markdown-content pre {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 16px 0;
+            border: 1px solid #334155;
+            box-shadow: var(--shadow-sm);
+            color: #e2e8f0;
+        }
+
+        .markdown-content pre::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .markdown-content pre::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        .markdown-content pre::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        .markdown-content code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .markdown-content pre .hljs {
+            background: transparent;
+            color: #e2e8f0;
+        }
+
+        .markdown-content pre .hljs-keyword {
+            color: #c084fc;
+        }
+
+        .markdown-content pre .hljs-string {
+            color: #34d399;
+        }
+
+        .markdown-content pre .hljs-comment {
+            color: #64748b;
+        }
+
+        .markdown-content pre .hljs-function {
+            color: #60a5fa;
+        }
+
+        .markdown-content pre .hljs-number {
+            color: #f472b6;
+        }
+
+        .markdown-content pre .hljs-title {
+            color: #fbbf24;
+        }
+
+        .markdown-content :not(pre) > code {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 0.2em 0.5em;
+            border-radius: 4px;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .code-block {
+            position: relative;
+            margin: 16px 0;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #c9d1d9;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            z-index: 10;
+            backdrop-filter: blur(4px);
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+
+        .copy-btn i {
+            margin-right: 4px;
+        }
+
+        .markdown-content h1,
+        .markdown-content h2,
+        .markdown-content h3,
+        .markdown-content h4,
+        .markdown-content h5,
+        .markdown-content h6 {
+            margin-top: 24px;
+            margin-bottom: 16px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--text-primary);
+        }
+
+        .markdown-content h1 {
+            font-size: 28px;
+            border-bottom: 2px solid var(--border-light);
+            padding-bottom: 12px;
+        }
+
+        .markdown-content h2 {
+            font-size: 24px;
+            margin-top: 32px;
+        }
+
+        .markdown-content h3 {
+            font-size: 20px;
+            margin-top: 28px;
+        }
+
+        .markdown-content h4 {
+            font-size: 18px;
+        }
+
+        .markdown-content p {
+            margin: 16px 0;
+            line-height: 1.7;
+        }
+
+        .markdown-content ul,
+        .markdown-content ol {
+            margin: 16px 0;
+            padding-left: 1.8em;
+        }
+
+        .markdown-content li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+
+        .markdown-content a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color var(--transition-fast);
+        }
+
+        .markdown-content a:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+
+        .markdown-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .markdown-content th,
+        .markdown-content td {
+            border: 1px solid var(--border-light);
+            padding: 12px 16px;
+            text-align: left;
+        }
+
+        .markdown-content th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .markdown-content tr:hover {
+            background: var(--bg-hover);
+        }
+
+        .markdown-content blockquote {
+            border-left: 4px solid var(--primary);
+            padding-left: 16px;
+            margin: 16px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+            background: var(--bg-tertiary);
+            padding: 16px;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        }
+
+        .markdown-content hr {
+            border: none;
+            border-top: 2px solid var(--border-light);
+            margin: 24px 0;
+        }
+
+        .markdown-content img {
+            max-width: 100%;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            margin: 16px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-2 sidebar" :class="{show: sidebarOpen}">
+                    <div class="sidebar-header">
+                        <h1><i class="bi bi-cpu"></i> HIS开发Agent</h1>
+                        <p>智能医疗系统开发助手</p>
+                    </div>
+                    <nav>
+                        <a class="nav-item" :class="{active: currentTab === 'dashboard'}" @click="switchTab('dashboard')">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>仪表盘</span>
+                        </a>
+                        <a class="nav-item" :class="{active: currentTab === 'models'}" @click="switchTab('models')">
+                            <i class="bi bi-gear"></i>
+                            <span>模型维护</span>
+                        </a>
+                        <a class="nav-item" :class="{active: currentTab === 'prompts'}" @click="switchTab('prompts')">
+                            <i class="bi bi-chat-text"></i>
+                            <span>提示词管理</span>
+                        </a>
+                        <a class="nav-item" :class="{active: currentTab === 'knowledge'}" @click="switchTab('knowledge')">
+                            <i class="bi bi-book"></i>
+                            <span>知识库管理</span>
+                        </a>
+                        <a class="nav-item" :class="{active: currentTab === 'his'}" @click="switchTab('his')">
+                            <i class="bi bi-hospital"></i>
+                            <span>HIS业务</span>
+                        </a>
+                        <a class="nav-item" :class="{active: currentTab === 'chat'}" @click="switchTab('chat')">
+                            <i class="bi bi-chat-dots"></i>
+                            <span>代码对话</span>
+                        </a>
+                        <a class="nav-item" :class="{active: currentTab === 'admin'}" @click="switchTab('admin')">
+                            <i class="bi bi-shield-lock"></i>
+                            <span>管理员配置</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <div class="col-md-10 main-content">
+                    <div v-if="loading" class="loading-overlay">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                    </div>
+
+                    <div class="page-header">
+                        <h1>{{ pageTitle }}</h1>
+                        <p>{{ pageSubtitle }}</p>
+                        <div class="version-badge">v1.0.0</div>
+                    </div>
+
+                    <div v-if="currentTab === 'dashboard'">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon blue">
+                                    <i class="bi bi-gear"></i>
+                                </div>
+                                <div class="stat-value">{{ stats.modelCount }}</div>
+                                <div class="stat-label">模型配置</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon green">
+                                    <i class="bi bi-chat-text"></i>
+                                </div>
+                                <div class="stat-value">{{ stats.promptCount }}</div>
+                                <div class="stat-label">提示词模板</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon orange">
+                                    <i class="bi bi-book"></i>
+                                </div>
+                                <div class="stat-value">{{ stats.kbCount }}</div>
+                                <div class="stat-label">知识库</div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>快速操作</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i>
+                                    欢迎使用HIS开发Agent管理平台！
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-primary" @click="switchTab('models')">
+                                        <i class="bi bi-gear"></i> 配置模型
+                                    </button>
+                                    <button class="btn btn-success" @click="switchTab('knowledge')">
+                                        <i class="bi bi-book"></i> 管理知识库
+                                    </button>
+                                    <button class="btn btn-warning" @click="switchTab('prompts')">
+                                        <i class="bi bi-chat-text"></i> 编辑提示词
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="currentTab === 'models'">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>模型配置列表</h5>
+                                <button class="btn btn-primary btn-sm" @click="showAddModelModal">
+                                    <i class="bi bi-plus"></i> 添加模型
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <table class="table" v-if="models.length > 0">
+                                    <thead>
+                                        <tr>
+                                            <th>配置名称</th>
+                                            <th>模型名称</th>
+                                            <th>温度</th>
+                                            <th>最大Token</th>
+                                            <th>默认</th>
+                                            <th>状态</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="model in models" :key="model.id">
+                                            <td>{{ model.name }}</td>
+                                            <td>{{ model.model_name }}</td>
+                                            <td>{{ model.temperature }}</td>
+                                            <td>{{ model.max_tokens }}</td>
+                                            <td>
+                                                <span v-if="model.is_default" class="badge badge-primary">
+                                                    <i class="bi bi-star-fill"></i> 默认
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge" :class="model.is_active ? 'badge-success' : 'badge-danger'">
+                                                    {{ model.is_active ? '启用' : '禁用' }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-primary btn-sm" @click="editModel(model)">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button class="btn btn-danger btn-sm" @click="deleteModel(model.id)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div v-else class="text-center text-muted py-4" style="padding: 60px 20px;">
+                                    <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: var(--bg-tertiary); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                        <i class="bi bi-inbox" style="font-size: 36px; color: var(--text-tertiary);"></i>
+                                    </div>
+                                    <p style="font-size: 16px; color: var(--text-secondary); margin-bottom: 8px;">暂无模型配置</p>
+                                    <p style="font-size: 14px; color: var(--text-tertiary);">点击上方"添加模型"按钮开始配置</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="currentTab === 'prompts'">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>提示词模板列表</h5>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-warning btn-sm" @click="initializeDefaults">
+                                        <i class="bi bi-magic"></i> 初始化默认
+                                    </button>
+                                    <button class="btn btn-primary btn-sm" @click="showAddPromptModal">
+                                        <i class="bi bi-plus"></i> 添加模板
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <table class="table" v-if="prompts.length > 0">
+                                    <thead>
+                                        <tr>
+                                            <th>模板名称</th>
+                                            <th>分类</th>
+                                            <th>描述</th>
+                                            <th>状态</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="prompt in prompts" :key="prompt.id">
+                                            <td>{{ prompt.name }}</td>
+                                            <td>{{ prompt.category }}</td>
+                                            <td>{{ prompt.description || '-' }}</td>
+                                            <td>
+                                                <span class="badge" :class="prompt.is_active ? 'badge-success' : 'badge-danger'">
+                                                    {{ prompt.is_active ? '启用' : '禁用' }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-primary btn-sm" @click="editPrompt(prompt)">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button class="btn btn-danger btn-sm" @click="deletePrompt(prompt.id)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div v-else class="text-center text-muted py-4" style="padding: 60px 20px;">
+                                    <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: var(--bg-tertiary); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                        <i class="bi bi-inbox" style="font-size: 36px; color: var(--text-tertiary);"></i>
+                                    </div>
+                                    <p style="font-size: 16px; color: var(--text-secondary); margin-bottom: 8px;">暂无提示词模板</p>
+                                    <p style="font-size: 14px; color: var(--text-tertiary);">点击"初始化默认"或"添加模板"开始使用</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="currentTab === 'knowledge'">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>知识库列表</h5>
+                                <button class="btn btn-primary btn-sm" @click="showCreateKBModal">
+                                    <i class="bi bi-plus"></i> 创建知识库
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <table class="table" v-if="knowledgeBases.length > 0">
+                                    <thead>
+                                        <tr>
+                                            <th>知识库名称</th>
+                                            <th>文档数量</th>
+                                            <th>状态</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="kb in knowledgeBases" :key="kb.id">
+                                            <td>{{ kb.name }}</td>
+                                            <td>{{ kb.document_count || 0 }}</td>
+                                            <td>
+                                                <span class="badge badge-success">可用</span>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-info btn-sm" @click="showDocListModal(kb)" title="查看文档">
+                                                    <i class="bi bi-files"></i>
+                                                </button>
+                                                <button class="btn btn-success btn-sm" @click="showAddDocModal(kb)" title="添加文档">
+                                                    <i class="bi bi-plus"></i>
+                                                </button>
+                                                <button class="btn btn-info btn-sm" @click="showDocListModal(kb)" title="查看文档">
+                                                    <i class="bi bi-file-text"></i>
+                                                </button>
+                                                <button class="btn btn-warning btn-sm" @click="rebuildKB(kb)" title="重建索引">
+                                                    <i class="bi bi-arrow-clockwise"></i>
+                                                </button>
+                                                <button class="btn btn-danger btn-sm" @click="deleteKB(kb.name)" title="删除知识库">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div v-else class="text-center text-muted py-4" style="padding: 60px 20px;">
+                                    <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: var(--bg-tertiary); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                        <i class="bi bi-inbox" style="font-size: 36px; color: var(--text-tertiary);"></i>
+                                    </div>
+                                    <p style="font-size: 16px; color: var(--text-secondary); margin-bottom: 8px;">暂无知识库</p>
+                                    <p style="font-size: 14px; color: var(--text-tertiary);">点击上方"创建知识库"按钮开始添加</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="currentTab === 'his'">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>HIS知识问答</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">问题</label>
+                                    <input type="text" class="form-control" v-model="hisQA.question" placeholder="输入您的问题...">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">使用知识库</label>
+                                    <select class="form-select" v-model="hisQA.use_kb">
+                                        <option :value="false">否</option>
+                                        <option :value="true">是</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3" v-if="hisQA.use_kb">
+                                    <label class="form-label">选择知识库</label>
+                                    <select class="form-select" v-model="hisQA.kb_name">
+                                        <option v-for="kb in knowledgeBases" :key="kb.id" :value="kb.name">{{ kb.name }}</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-primary" @click="doKnowledgeQA">
+                                    <i class="bi bi-send"></i> 提问
+                                </button>
+                                <div v-if="hisQA.result" class="mt-3">
+                                    <label class="form-label">回答结果</label>
+                                    <div class="card">
+                                        <div class="card-body" style="background: #f8f9fa;">
+                                            <pre style="white-space: pre-wrap; margin: 0;">{{ hisQA.result }}</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="currentTab === 'chat'">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>代码对话助手 <span class="badge bg-success">支持本地存储</span></h5>
+                                <select class="form-select form-select-sm" v-model="chatModelConfig" style="width: auto; display: inline-block; margin-left: 10px;">
+                                    <option :value="null">使用默认配置</option>
+                                    <option v-for="model in models" :key="model.id" :value="model.name">{{ model.name }} ({{ model.model_name }})</option>
+                                </select>
+                            </div>
+                            <div class="card-body">
+                                <div class="chat-container">
+                                    <div class="chat-messages">
+                                        <div v-for="(msg, index) in chatMessages" :key="index" class="chat-message" :class="msg.role">
+                                            <div class="message-header">
+                                                <span v-if="msg.role === 'user'" class="avatar-emoji">🐕</span>
+                                                <span v-else class="avatar-emoji">✈️</span>
+                                                <span class="message-role">{{ msg.role === 'user' ? '汪汪队小利' : '超级飞侠' }}</span>
+                                            </div>
+                                            <div class="message-content">
+                                                <div v-if="msg.role === 'assistant'" v-html="renderMarkdown(msg.content)" @click="handleCopyCode" class="markdown-content"></div>
+                                                <div v-else>{{ msg.content }}</div>
+                                            </div>
+                                        </div>
+                                        <div v-if="chatLoading" class="chat-message assistant">
+                                            <div class="message-header">
+                                                <span class="avatar-emoji">✈️</span>
+                                                <span class="message-role">超级飞侠</span>
+                                            </div>
+                                            <div class="message-content">
+                                                <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                                                <span class="ms-2">正在思考...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="chat-input">
+                                        <div v-if="uploadedFile" class="mb-2">
+                                            <div class="alert alert-info py-2 px-3">
+                                                <i class="bi bi-file-text me-2"></i>
+                                                {{ uploadedFile.name }}
+                                                <span class="badge bg-light text-dark ms-2">{{ (uploadedFile.size / 1024).toFixed(2) }} KB</span>
+                                                <button class="btn btn-sm btn-outline-danger float-end" @click="uploadedFile = null">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <textarea 
+                                            class="form-control chat-textarea" 
+                                            v-model="chatInput" 
+                                            placeholder="请输入您的问题或代码需求..."
+                                            @keydown.ctrl.enter="sendChatMessage"
+                                        ></textarea>
+                                        <div class="chat-actions">
+                                            <button class="btn btn-outline-primary btn-sm me-2" @click="$refs.fileInput.click()" title="上传文档">
+                                                <i class="bi bi-upload"></i> 上传
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" @click="clearChatHistory" title="清除对话历史">
+                                                <i class="bi bi-trash"></i> 清除历史
+                                            </button>
+                                            <input type="file" 
+                                                   ref="fileInput" 
+                                                   @change="handleFileSelect" 
+                                                   accept=".md,.docx,.doc,.txt,.json,.csv,.xlsx,.xls" 
+                                                   style="display: none;">
+                                            <div class="d-flex align-items-center">
+                                                <small class="text-muted me-2">Ctrl + Enter 发送</small>
+                                                <button class="btn btn-primary" @click="sendChatMessage" :disabled="!chatInput.trim() && !uploadedFile || chatLoading">
+                                                    <i class="bi bi-send"></i> 发送
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="currentTab === 'admin'">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>管理员配置 <span class="badge bg-warning">需要密码验证</span></h5>
+                            </div>
+                            <div class="card-body">
+                                <div v-if="!adminVerified">
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-shield-lock me-2"></i>
+                                        修改配置需要管理员密码验证
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">管理员密码</label>
+                                        <input type="password" class="form-control" v-model="adminPassword" placeholder="请输入管理员密码" @keyup.enter="verifyAdminPassword">
+                                        <div v-if="adminError" class="invalid-feedback d-block">{{ adminError }}</div>
+                                    </div>
+                                    <button class="btn btn-primary" @click="verifyAdminPassword" :disabled="!adminPassword || adminVerifying">
+                                        <span v-if="adminVerifying" class="spinner-border spinner-border-sm me-2"></span>
+                                        验证密码
+                                    </button>
+                                </div>
+                                <div v-else>
+                                    <div class="alert alert-success">
+                                        <i class="bi bi-check-circle me-2"></i>
+                                        密码验证成功，可以修改配置
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Chunk Size (分块大小: 100-4096)</label>
+                                        <input type="number" class="form-control" v-model="adminConfig.chunk_size" min="100" max="4096" placeholder="默认值: 512">
+                                        <small class="text-muted">文本分块的大小，单位为字符数</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Chunk Overlap (分块重叠: 0-1000)</label>
+                                        <input type="number" class="form-control" v-model="adminConfig.chunk_overlap" min="0" max="1000" placeholder="默认值: 50">
+                                        <small class="text-muted">相邻分块之间的重叠字符数，确保上下文连贯性</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Top K (检索数量: 1-100)</label>
+                                        <input type="number" class="form-control" v-model="adminConfig.top_k" min="1" max="100" placeholder="默认值: 5">
+                                        <small class="text-muted">RAG检索时返回的相关文档数量</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">检索类型</label>
+                                        <select class="form-select" v-model="adminConfig.retrieval_type">
+                                            <option value="hybrid">混合检索（推荐，结合HNSW和BM25）</option>
+                                            <option value="hnsw">HNSW向量检索（仅使用向量相似度）</option>
+                                        </select>
+                                        <small class="text-muted">
+                                            <span v-if="adminConfig.retrieval_type === 'hybrid'">
+                                                混合检索结合了向量相似度和关键词匹配，适合代码检索场景
+                                            </span>
+                                            <span v-else>
+                                                HNSW检索仅使用向量相似度，速度快但可能错过精确关键词
+                                            </span>
+                                        </small>
+                                    </div>
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        <strong>提示：</strong>修改配置后需要重启服务才能生效
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-primary" @click="updateAdminConfig" :disabled="adminSaving">
+                                            <span v-if="adminSaving" class="spinner-border spinner-border-sm me-2"></span>
+                                            保存配置
+                                        </button>
+                                        <button class="btn btn-secondary" @click="cancelAdminEdit">
+                                            取消
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" v-if="showModelModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{ editingModel ? '编辑模型配置' : '添加模型配置' }}</h5>
+                        <button type="button" class="btn-close" @click="closeModelModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">配置名称</label>
+                            <input type="text" class="form-control" v-model="modelForm.name" placeholder="例如: 默认配置">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">模型名称</label>
+                            <select class="form-select" v-model="modelForm.model_name">
+                                <!-- GLM系列模型 -->
+                                <optgroup label="GLM系列模型">
+                                    <option value="glm-4-7">glm-4-7 (最新版本)</option>
+                                    <option value="glm-4">glm-4 (通用版)</option>
+                                    <option value="glm-4-plus">glm-4-plus (增强版)</option>
+                                    <option value="glm-4-7b">glm-4-7b (轻量版)</option>
+                                    <option value="glm-4-9b">glm-4-9b (中等规模)</option>
+                                    <option value="glm-4-20b">glm-4-20b (大规模)</option>
+                                    <option value="glm-4-32b">glm-4-32b (超大规模)</option>
+                                    <option value="glm-4-128k">glm-4-128k (长上下文)</option>
+                                    <option value="glm-4-0520">glm-4-0520 (稳定版)</option>
+                                    <option value="glm-4-air">glm-4-air (轻量高效)</option>
+                                    <option value="glm-4-airx">glm-4-airx (极速响应)</option>
+                                    <option value="glm-4-flash">glm-4-flash (超快响应)</option>
+                                    <option value="glm-4-long">glm-4-long (长上下文)</option>
+                                    <option value="glm-3-turbo">glm-3-turbo (快速版)</option>
+                                    <option value="glm-3-pro">glm-3-pro (专业版)</option>
+                                    <option value="glm-4v">glm-4v (多模态)</option>
+                                    <option value="glm-4v-plus">glm-4v-plus (多模态增强)</option>
+                                </optgroup>
+                                
+                                <!-- OpenAI系列模型 -->
+                                <optgroup label="OpenAI系列模型">
+                                    <option value="gpt-4o">gpt-4o (多模态)</option>
+                                    <option value="gpt-4o-mini">gpt-4o-mini (轻量版)</option>
+                                    <option value="gpt-4-turbo">gpt-4-turbo</option>
+                                    <option value="gpt-4-turbo-preview">gpt-4-turbo-preview</option>
+                                    <option value="gpt-4">gpt-4</option>
+                                    <option value="gpt-4-vision-preview">gpt-4-vision-preview</option>
+                                    <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                                    <option value="gpt-3.5-turbo-16k">gpt-3.5-turbo-16k</option>
+                                </optgroup>
+                                
+                                <!-- Claude系列模型 -->
+                                <optgroup label="Claude系列模型">
+                                    <option value="claude-3-5-sonnet">claude-3-5-sonnet (增强版)</option>
+                                    <option value="claude-3-opus">claude-3-opus (最强版)</option>
+                                    <option value="claude-3-sonnet">claude-3-sonnet (平衡版)</option>
+                                    <option value="claude-3-haiku">claude-3-haiku (快速版)</option>
+                                </optgroup>
+                                
+                                <!-- 其他主流模型 -->
+                                <optgroup label="其他主流模型">
+                                    <option value="qwen-max">qwen-max (通义千问)</option>
+                                    <option value="qwen-plus">qwen-plus (通义千问)</option>
+                                    <option value="qwen-turbo">qwen-turbo (通义千问)</option>
+                                    <option value="moonshot-v1-128k">moonshot-v1-128k (月之暗面)</option>
+                                    <option value="moonshot-v1-32k">moonshot-v1-32k (月之暗面)</option>
+                                    <option value="moonshot-v1-8k">moonshot-v1-8k (月之暗面)</option>
+                                    <option value="deepseek-chat">deepseek-chat (深度求索)</option>
+                                    <option value="deepseek-coder">deepseek-coder (深度求索)</option>
+                                    <option value="yi-large">yi-large (零一万物)</option>
+                                    <option value="yi-medium">yi-medium (零一万物)</option>
+                                    <option value="yi-34b-chat">yi-34b-chat (零一万物)</option>
+                                    <option value="yi-spark">yi-spark (零一万物)</option>
+                                    <option value="yi-lightning">yi-lightning (零一万物)</option>
+                                    <option value="hunyuan-pro">hunyuan-pro (腾讯混元)</option>
+                                    <option value="hunyuan-standard">hunyuan-standard (腾讯混元)</option>
+                                    <option value="hunyuan-lite">hunyuan-lite (腾讯混元)</option>
+                                    <option value="baichuan2-53b">baichuan2-53b (百川)</option>
+                                    <option value="baichuan2-turbo">baichuan2-turbo (百川)</option>
+                                </optgroup>
+                                
+                                <!-- 嵌入模型 -->
+                                <optgroup label="嵌入模型">
+                                    <option value="text-embedding-3-large">text-embedding-3-large (OpenAI)</option>
+                                    <option value="text-embedding-3-small">text-embedding-3-small (OpenAI)</option>
+                                    <option value="text-embedding-ada-002">text-embedding-ada-002 (OpenAI)</option>
+                                    <option value="bge-large">bge-large (BGE)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">API密钥</label>
+                            <input type="password" class="form-control" v-model="modelForm.api_key" placeholder="输入API密钥">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">API基础URL（可选）</label>
+                            <input type="text" class="form-control" v-model="modelForm.api_base" placeholder="自定义API端点，留空使用默认">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">温度 (0-2)</label>
+                            <input type="number" step="0.1" min="0" max="2" class="form-control" v-model="modelForm.temperature">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">最大Token</label>
+                            <input type="number" class="form-control" v-model="modelForm.max_tokens">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Top-p (0-1)</label>
+                            <input type="number" step="0.1" min="0" max="1" class="form-control" v-model="modelForm.top_p">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">描述</label>
+                            <input type="text" class="form-control" v-model="modelForm.description" placeholder="配置描述">
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="isDefault" v-model="modelForm.is_default">
+                            <label class="form-check-label" for="isDefault">设为默认配置</label>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">状态</label>
+                            <select class="form-select" v-model="modelForm.is_active">
+                                <option :value="true">启用</option>
+                                <option :value="false">禁用</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="closeModelModal">取消</button>
+                        <button type="button" class="btn btn-primary" @click="saveModel">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" v-if="showPromptModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{ editingPrompt ? '编辑提示词模板' : '添加提示词模板' }}</h5>
+                        <button type="button" class="btn-close" @click="closePromptModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">模板名称</label>
+                            <input type="text" class="form-control" v-model="promptForm.name" placeholder="例如: HIS代码审查">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">分类</label>
+                            <select class="form-select" v-model="promptForm.category">
+                                <option value="development">开发</option>
+                                <option value="code_review">代码审查</option>
+                                <option value="qa">问答</option>
+                                <option value="business">业务</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">系统提示词</label>
+                            <textarea class="form-control form-textarea" v-model="promptForm.system_prompt" placeholder="系统提示词内容..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">用户提示词模板</label>
+                            <textarea class="form-control form-textarea" v-model="promptForm.user_prompt_template" placeholder="用户提示词模板..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">描述</label>
+                            <input type="text" class="form-control" v-model="promptForm.description" placeholder="模板描述">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">状态</label>
+                            <select class="form-select" v-model="promptForm.is_active">
+                                <option :value="true">启用</option>
+                                <option :value="false">禁用</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="closePromptModal">取消</button>
+                        <button type="button" class="btn btn-primary" @click="savePrompt">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" v-if="showCreateKBModalFlag">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">创建知识库</h5>
+                        <button type="button" class="btn-close" @click="closeCreateKBModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ul class="nav nav-tabs mb-3" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link" :class="{active: kbCreateMode === 'directory'}" @click="kbCreateMode = 'directory'">
+                                    <i class="bi bi-folder"></i> 从目录创建
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" :class="{active: kbCreateMode === 'upload'}" @click="kbCreateMode = 'upload'">
+                                    <i class="bi bi-cloud-upload"></i> 上传文件创建
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="mb-3">
+                            <label class="form-label">知识库名称</label>
+                            <input type="text" class="form-control" v-model="kbForm.name" placeholder="例如: his_knowledge">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">描述</label>
+                            <input type="text" class="form-control" v-model="kbForm.description" placeholder="知识库描述">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">嵌入模型</label>
+                            <select class="form-select" v-model="kbForm.embedding_model">
+                                <optgroup label="智谱AI嵌入模型（推荐）">
+                                    <option value="zhipuai-embedding">zhipuai-embedding (默认)</option>
+                                </optgroup>
+                                <optgroup label="OpenAI嵌入模型">
+                                    <option value="text-embedding-3-large">text-embedding-3-large (最新)</option>
+                                    <option value="text-embedding-3-small">text-embedding-3-small (轻量)</option>
+                                    <option value="text-embedding-ada-002">text-embedding-ada-002 (经典)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <div v-if="kbCreateMode === 'directory'" class="mt-3">
+                            <div class="mb-3">
+                                <label class="form-label">文档路径</label>
+                                <input type="text" class="form-control" v-model="kbForm.path" placeholder="例如: ./docs/his">
+                                <small class="text-muted">包含文档的目录路径</small>
+                            </div>
+                        </div>
+
+                        <div v-if="kbCreateMode === 'upload'" class="mt-3">
+                            <div class="mb-3">
+                                <label class="form-label">上传文档</label>
+                                <input type="file" class="form-control" @change="handleFileUpload" multiple accept=".txt,.md,.pdf,.docx,.doc,.html,.json">
+                                <small class="text-muted">支持格式: .txt, .md, .pdf, .docx, .doc, .html, .json</small>
+                            </div>
+                            <div v-if="uploadedFiles.length > 0" class="mb-3">
+                                <label class="form-label">已上传文件</label>
+                                <ul class="list-group">
+                                    <li v-for="(file, index) in uploadedFiles" :key="index" class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>{{ file.name }} <small class="text-muted">({{ formatFileSize(file.size) }})</small></span>
+                                        <button class="btn btn-sm btn-outline-danger" @click="removeUploadedFile(index)">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">分块大小</label>
+                                    <input type="number" class="form-control" v-model="kbForm.chunk_size" placeholder="512">
+                                    <small class="text-muted">文本分块大小（字符数）</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">分块重叠</label>
+                                    <input type="number" class="form-control" v-model="kbForm.chunk_overlap" placeholder="50">
+                                    <small class="text-muted">文本分块重叠大小（字符数）</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">分段规则</label>
+                                    <select class="form-select" v-model="kbForm.splitter_type">
+                                        <option value="mixed">混合策略（推荐）</option>
+                                        <option value="ast">AST 代码分块</option>
+                                        <option value="sentence">句子级分段</option>
+                                        <option value="semantic">语义级分段</option>
+                                        <option value="custom">自定义分段</option>
+                                    </select>
+                                    <small class="text-muted">选择文本分段策略</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="closeCreateKBModal">取消</button>
+                        <button type="button" class="btn btn-primary" @click="kbCreateMode === 'directory' ? createKB() : createKBFromFiles()" :disabled="kbCreateMode === 'upload' && uploadedFiles.length === 0">
+                            {{ kbCreateMode === 'directory' ? '创建' : '创建知识库' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" v-if="showDocListModalFlag">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">知识库文档列表 - {{ selectedKB ? selectedKB.name : '' }}</h5>
+                        <button type="button" class="btn-close" @click="closeDocListModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div v-if="docListLoading" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2">加载文档列表中...</p>
+                        </div>
+                        <div v-else-if="kbDocuments.length > 0">
+                            <div class="mb-3">
+                                <button class="btn btn-sm btn-outline-danger" @click="deleteSelectedDocs" :disabled="selectedDocs.length === 0">
+                                    <i class="bi bi-trash"></i> 删除选中的文档 ({{ selectedDocs.length }})
+                                </button>
+                            </div>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;">
+                                            <input type="checkbox" @change="toggleSelectAllDocs" :checked="selectedDocs.length === kbDocuments.length && kbDocuments.length > 0">
+                                        </th>
+                                        <th>文件名</th>
+                                        <th>文档ID</th>
+                                        <th style="width: 100px;">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="doc in kbDocuments" :key="doc.file_name">
+                                        <td>
+                                            <input type="checkbox" v-model="selectedDocs" :value="doc.file_name">
+                                        </td>
+                                        <td>{{ doc.file_name }}</td>
+                                        <td><small class="text-muted">{{ doc.doc_id || '-' }}</small></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-danger" @click="deleteSingleDoc(doc.file_name)" title="删除">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div v-else class="text-center text-muted py-4" style="padding: 60px 20px;">
+                            <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: var(--bg-tertiary); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-inbox" style="font-size: 36px; color: var(--text-tertiary);"></i>
+                            </div>
+                            <p style="font-size: 16px; color: var(--text-secondary); margin-bottom: 8px;">暂无文档</p>
+                            <p style="font-size: 14px; color: var(--text-tertiary);">通过"添加文档"按钮上传文件</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="closeDocListModal">关闭</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" v-if="showAddDocModalFlag">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">添加文档到知识库</h5>
+                        <button type="button" class="btn-close" @click="closeAddDocModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">知识库名称</label>
+                            <input type="text" class="form-control" v-model="addDocForm.name" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">上传文档</label>
+                            <input type="file" class="form-control" @change="handleAddDocFileUpload" multiple accept=".txt,.md,.pdf,.docx,.doc,.html,.json">
+                            <small class="text-muted">支持格式: .txt, .md, .pdf, .docx, .doc, .html, .json</small>
+                        </div>
+                        <div v-if="addDocUploadedFiles.length > 0" class="mb-3">
+                            <label class="form-label">已上传文件</label>
+                            <ul class="list-group">
+                                <li v-for="(file, index) in addDocUploadedFiles" :key="index" class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ file.name }} <small class="text-muted">({{ formatFileSize(file.size) }})</small></span>
+                                    <button class="btn btn-sm btn-outline-danger" @click="removeAddDocUploadedFile(index)">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">分块大小</label>
+                                    <input type="number" class="form-control" v-model="addDocForm.chunk_size" placeholder="512">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">分块重叠</label>
+                                    <input type="number" class="form-control" v-model="addDocForm.chunk_overlap" placeholder="50">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">嵌入模型（可选）</label>
+                            <select class="form-select" v-model="addDocForm.embedding_model">
+                                <option value="">使用知识库原有模型</option>
+                                <optgroup label="智谱AI嵌入模型">
+                                    <option value="zhipuai-embedding">zhipuai-embedding</option>
+                                </optgroup>
+                                <optgroup label="OpenAI嵌入模型">
+                                    <option value="text-embedding-3-large">text-embedding-3-large</option>
+                                    <option value="text-embedding-3-small">text-embedding-3-small</option>
+                                    <option value="text-embedding-ada-002">text-embedding-ada-002</option>
+                                </optgroup>
+                            </select>
+                            <small class="text-muted">不指定则使用知识库原有的embedding模型</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="closeAddDocModal">取消</button>
+                        <button type="button" class="btn btn-primary" @click="addDocsToKB()" :disabled="addDocUploadedFiles.length === 0">
+                            添加文档
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" :class="{ show: showDocListModalFlag, 'd-block': showDocListModalFlag }" tabindex="-1" v-if="showDocListModalFlag">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">知识库文档列表 - {{ selectedKB ? selectedKB.name : '' }}</h5>
+                        <button type="button" class="btn-close" @click="closeDocListModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div v-if="docListLoading" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <span class="ms-2">加载中...</span>
+                        </div>
+                        <div v-else-if="kbDocuments.length === 0" class="text-center py-4 text-muted">
+                            <p>暂无文档</p>
+                        </div>
+                        <div v-else>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th width="40">
+                                                <input type="checkbox" :checked="selectedDocs.length === kbDocuments.length && kbDocuments.length > 0" @change="toggleSelectAllDocs">
+                                            </th>
+                                            <th>文件名</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="doc in kbDocuments" :key="doc.doc_id">
+                                            <td>
+                                                <input type="checkbox" v-model="selectedDocs" :value="doc.file_name">
+                                            </td>
+                                            <td>{{ doc.file_name }}</td>
+                                            <td>
+                                                <button class="btn btn-danger btn-sm" @click="deleteSingleDoc(doc.file_name)" title="删除">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="closeDocListModal">关闭</button>
+                        <button type="button" class="btn btn-danger" @click="deleteSelectedDocs" :disabled="selectedDocs.length === 0">
+                            删除选中文档 ({{ selectedDocs.length }})
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const { createApp } = Vue;
+
+            const api = axios.create({
+                baseURL: '/api/v1',
+                timeout: 120000
+            });
+
+            createApp({
+            data() {
+                return {
+                    currentTab: 'dashboard',
+                    loading: false,
+                    sidebarOpen: false,
+                    stats: {
+                        modelCount: 0,
+                        promptCount: 0,
+                        kbCount: 0
+                    },
+                    models: [],
+                    prompts: [],
+                    knowledgeBases: [],
+                    hisQA: {
+                        question: '',
+                        use_kb: false,
+                        kb_name: '',
+                        result: ''
+                    },
+                    chatMessages: [],
+                    chatInput: '',
+                    chatLoading: false,
+                    chatModelConfig: null,
+                    uploadedFile: null,
+                    showModelModal: false,
+                    showPromptModal: false,
+                    showCreateKBModalFlag: false,
+                    editingModel: null,
+                    editingPrompt: null,
+                    modelForm: {
+                        name: '',
+                        model_name: 'glm-4',
+                        api_key: '',
+                        api_base: '',
+                        temperature: 0.7,
+                        max_tokens: 2000,
+                        top_p: 0.9,
+                        description: '',
+                        is_active: true,
+                        is_default: false
+                    },
+                    promptForm: {
+                        name: '',
+                        category: 'development',
+                        system_prompt: '',
+                        user_prompt_template: '',
+                        description: '',
+                        is_active: true
+                    },
+                    kbForm: {
+                        name: '',
+                        description: '',
+                        embedding_model: 'zhipuai-embedding',
+                        path: '',
+                        chunk_size: 512,
+                        chunk_overlap: 50,
+                        splitter_type: 'mixed'
+                    },
+                    kbCreateMode: 'directory',
+                    uploadedFiles: [],
+                    showAddDocModalFlag: false,
+                    selectedKB: null,
+                    addDocForm: {
+                        name: '',
+                        chunk_size: 512,
+                        chunk_overlap: 50,
+                        embedding_model: ''
+                    },
+                    addDocUploadedFiles: [],
+                    showDocListModalFlag: false,
+                    kbDocuments: [],
+                    selectedDocs: [],
+                    docListLoading: false,
+                    adminPassword: '',
+                    adminError: '',
+                    adminVerified: false,
+                    adminVerifying: false,
+                    adminSaving: false,
+                    adminConfig: {
+                        chunk_size: 512,
+                        chunk_overlap: 50,
+                        top_k: 5,
+                        retrieval_type: 'hybrid'
+                    }
+                };
+            },
+            computed: {
+                pageTitle() {
+                    const titles = {
+                        dashboard: '仪表盘',
+                        models: '模型维护',
+                        prompts: '提示词管理',
+                        knowledge: '知识库管理',
+                        his: 'HIS业务',
+                        chat: '代码对话',
+                        document: '文档生成代码'
+                    };
+                    return titles[this.currentTab] || '';
+                },
+                pageSubtitle() {
+                    const subtitles = {
+                        dashboard: '系统概览和快速操作',
+                        models: '管理AI模型配置和参数',
+                        prompts: '管理和编辑提示词模板',
+                        knowledge: '加载和管理知识库',
+                        his: 'HIS系统相关业务功能',
+                        chat: '通过对话生成代码和解答问题',
+                        document: '上传设计文档，自动生成Java代码'
+                    };
+                    return subtitles[this.currentTab] || '';
+                }
+            },
+            mounted() {
+                this.loadStats();
+                this.loadChatHistory();
+                marked.setOptions({
+                    highlight: function(code, lang) {
+                        const language = highlight.getLanguage(lang) ? lang : 'plaintext';
+                        return highlight.highlight(code, { language }).value;
+                    },
+                    langPrefix: 'hljs language-',
+                    breaks: true
+                });
+            },
+            methods: {
+                switchTab(tab) {
+                    this.currentTab = tab;
+                    if (tab === 'models') this.loadModels();
+                    if (tab === 'prompts') this.loadPrompts();
+                    if (tab === 'knowledge') this.loadKnowledgeBases();
+                    if (tab === 'chat') this.loadModels();
+                    if (tab === 'document') this.loadModels();
+                },
+                async loadStats() {
+                    try {
+                        const [modelsRes, promptsRes, kbRes] = await Promise.all([
+                            api.get('/llm/config'),
+                            api.get('/prompt/list'),
+                            api.get('/knowledge/list')
+                        ]);
+                        this.stats.modelCount = modelsRes.data.length || 0;
+                        this.stats.promptCount = promptsRes.data.length || 0;
+                        this.stats.kbCount = kbRes.data.length || 0;
+                    } catch (error) {
+                        console.error('加载统计信息失败:', error);
+                    }
+                },
+                async loadModels() {
+                    this.loading = true;
+                    try {
+                        const response = await api.get('/llm/config');
+                        this.models = response.data || [];
+                    } catch (error) {
+                        console.error('加载模型配置失败:', error);
+                        alert('加载模型配置失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async loadPrompts() {
+                    this.loading = true;
+                    try {
+                        const response = await api.get('/prompt/list');
+                        this.prompts = response.data || [];
+                    } catch (error) {
+                        console.error('加载提示词模板失败:', error);
+                        alert('加载提示词模板失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async loadKnowledgeBases() {
+                    this.loading = true;
+                    try {
+                        const response = await api.get('/knowledge/list');
+                        this.knowledgeBases = response.data || [];
+                    } catch (error) {
+                        console.error('加载知识库失败:', error);
+                        alert('加载知识库失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async initializeDefaults() {
+                    if (!confirm('确定要初始化默认提示词模板吗？')) return;
+                    this.loading = true;
+                    try {
+                        await api.post('/prompt/initialize');
+                        await this.loadPrompts();
+                        await this.loadStats();
+                        alert('默认配置初始化成功！');
+                    } catch (error) {
+                        console.error('初始化失败:', error);
+                        alert('初始化失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                showAddModelModal() {
+                    this.editingModel = null;
+                    this.modelForm = {
+                        name: '',
+                        model_name: 'glm-4',
+                        api_key: '',
+                        api_base: '',
+                        temperature: 0.7,
+                        max_tokens: 2000,
+                        top_p: 0.9,
+                        description: '',
+                        is_active: true,
+                        is_default: false
+                    };
+                    this.showModelModal = true;
+                },
+                editModel(model) {
+                    this.editingModel = model;
+                    this.modelForm = { ...model };
+                    this.showModelModal = true;
+                },
+                closeModelModal() {
+                    this.showModelModal = false;
+                    this.editingModel = null;
+                },
+                async saveModel() {
+                    if (!this.modelForm.name) {
+                        alert('请输入配置名称');
+                        return;
+                    }
+                    this.loading = true;
+                    try {
+                        if (this.editingModel) {
+                            await api.put(`/llm/config/${this.editingModel.id}`, this.modelForm);
+                        } else {
+                            await api.post('/llm/config', this.modelForm);
+                        }
+                        await this.loadModels();
+                        await this.loadStats();
+                        this.closeModelModal();
+                        alert('保存成功！');
+                    } catch (error) {
+                        console.error('保存模型配置失败:', error);
+                        alert('保存失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async deleteModel(id) {
+                    if (!confirm('确定要删除这个模型配置吗？')) return;
+                    this.loading = true;
+                    try {
+                        await api.delete(`/llm/config/${id}`);
+                        await this.loadModels();
+                        await this.loadStats();
+                        alert('删除成功！');
+                    } catch (error) {
+                        console.error('删除模型配置失败:', error);
+                        alert('删除失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                showAddPromptModal() {
+                    this.editingPrompt = null;
+                    this.promptForm = {
+                        name: '',
+                        category: 'development',
+                        system_prompt: '',
+                        user_prompt_template: '',
+                        description: '',
+                        is_active: true
+                    };
+                    this.showPromptModal = true;
+                },
+                editPrompt(prompt) {
+                    this.editingPrompt = prompt;
+                    this.promptForm = { ...prompt };
+                    this.showPromptModal = true;
+                },
+                closePromptModal() {
+                    this.showPromptModal = false;
+                    this.editingPrompt = null;
+                },
+                async savePrompt() {
+                    if (!this.promptForm.name || !this.promptForm.system_prompt) {
+                        alert('请填写模板名称和系统提示词');
+                        return;
+                    }
+                    this.loading = true;
+                    try {
+                        if (this.editingPrompt) {
+                            await api.put(`/prompt/${this.editingPrompt.id}`, this.promptForm);
+                        } else {
+                            await api.post('/prompt/create', this.promptForm);
+                        }
+                        await this.loadPrompts();
+                        await this.loadStats();
+                        this.closePromptModal();
+                        alert('保存成功！');
+                    } catch (error) {
+                        console.error('保存提示词模板失败:', error);
+                        alert('保存失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async deletePrompt(id) {
+                    if (!confirm('确定要删除这个提示词模板吗？')) return;
+                    this.loading = true;
+                    try {
+                        await api.delete(`/prompt/${id}`);
+                        await this.loadPrompts();
+                        await this.loadStats();
+                        alert('删除成功！');
+                    } catch (error) {
+                        console.error('删除提示词模板失败:', error);
+                        alert('删除失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                showCreateKBModal() {
+                    this.kbForm = {
+                        name: '',
+                        description: '',
+                        embedding_model: 'zhipuai-embedding',
+                        path: '',
+                        chunk_size: 512,
+                        chunk_overlap: 50,
+                        splitter_type: 'mixed'
+                    };
+                    this.kbCreateMode = 'directory';
+                    this.uploadedFiles = [];
+                    this.showCreateKBModalFlag = true;
+                },
+                closeCreateKBModal() {
+                    this.showCreateKBModalFlag = false;
+                    this.uploadedFiles = [];
+                },
+                async createKB() {
+                    if (!this.kbForm.name) {
+                        alert('请输入知识库名称');
+                        return;
+                    }
+                    this.loading = true;
+                    try {
+                        await api.post('/knowledge/create', this.kbForm);
+                        await this.loadKnowledgeBases();
+                        await this.loadStats();
+                        this.closeCreateKBModal();
+                        alert('知识库创建成功！');
+                    } catch (error) {
+                        console.error('创建知识库失败:', error);
+                        alert('创建失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async handleFileUpload(event) {
+                    const files = Array.from(event.target.files);
+                    this.loading = true;
+                    try {
+                        for (const file of files) {
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            const response = await api.post('/knowledge/upload', formData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                            });
+                            if (response.data.success) {
+                                this.uploadedFiles.push({
+                                    name: file.name,
+                                    size: file.size,
+                                    path: response.data.data.path
+                                });
+                            }
+                        }
+                        alert('文件上传成功！');
+                    } catch (error) {
+                        console.error('文件上传失败:', error);
+                        alert('文件上传失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                        event.target.value = '';
+                    }
+                },
+                removeUploadedFile(index) {
+                    this.uploadedFiles.splice(index, 1);
+                },
+                formatFileSize(bytes) {
+                    if (bytes === 0) return '0 Bytes';
+                    const k = 1024;
+                    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+                },
+                async createKBFromFiles() {
+                    if (!this.kbForm.name) {
+                        alert('请输入知识库名称');
+                        return;
+                    }
+                    if (this.uploadedFiles.length === 0) {
+                        alert('请先上传文件');
+                        return;
+                    }
+                    this.loading = true;
+                    try {
+                        await api.post('/knowledge/create-from-files', {
+                            name: this.kbForm.name,
+                            description: this.kbForm.description,
+                            embedding_model: this.kbForm.embedding_model,
+                            chunk_size: this.kbForm.chunk_size,
+                            chunk_overlap: this.kbForm.chunk_overlap
+                        });
+                        await this.loadKnowledgeBases();
+                        await this.loadStats();
+                        this.closeCreateKBModal();
+                        alert('知识库创建成功！');
+                    } catch (error) {
+                        console.error('创建知识库失败:', error);
+                        alert('创建失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async rebuildKB(kb) {
+                    if (!confirm(`确定要重建知识库 "${kb.name}" 吗？`)) return;
+                    this.loading = true;
+                    try {
+                        await api.post(`/knowledge/${kb.name}/rebuild`);
+                        await this.loadKnowledgeBases();
+                        alert('知识库重建成功！');
+                    } catch (error) {
+                        console.error('重建知识库失败:', error);
+                        alert('重建失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async deleteKB(name) {
+                    if (!confirm(`确定要删除知识库 "${name}" 吗？`)) return;
+                    this.loading = true;
+                    try {
+                        await api.delete(`/knowledge/${name}`);
+                        await this.loadKnowledgeBases();
+                        await this.loadStats();
+                        alert('删除成功！');
+                    } catch (error) {
+                        console.error('删除知识库失败:', error);
+                        alert('删除失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                showAddDocModal(kb) {
+                    this.selectedKB = kb;
+                    this.addDocForm = {
+                        name: kb.name,
+                        chunk_size: 512,
+                        chunk_overlap: 50,
+                        embedding_model: ''
+                    };
+                    this.addDocUploadedFiles = [];
+                    this.showAddDocModalFlag = true;
+                },
+                closeAddDocModal() {
+                    this.showAddDocModalFlag = false;
+                    this.selectedKB = null;
+                    this.addDocUploadedFiles = [];
+                },
+                showDocListModal(kb) {
+                    this.selectedKB = kb;
+                    this.kbDocuments = [];
+                    this.selectedDocs = [];
+                    this.showDocListModalFlag = true;
+                    this.loadKBDocuments();
+                },
+                closeDocListModal() {
+                    this.showDocListModalFlag = false;
+                    this.selectedKB = null;
+                    this.kbDocuments = [];
+                    this.selectedDocs = [];
+                },
+                async loadKBDocuments() {
+                    if (!this.selectedKB) return;
+                    this.docListLoading = true;
+                    try {
+                        const response = await api.get(`/knowledge/${this.selectedKB.name}/documents`);
+                        this.kbDocuments = response.data.data || [];
+                    } catch (error) {
+                        console.error('加载文档列表失败:', error);
+                        alert('加载文档列表失败，请检查控制台日志');
+                    } finally {
+                        this.docListLoading = false;
+                    }
+                },
+                toggleSelectAllDocs() {
+                    if (this.selectedDocs.length === this.kbDocuments.length) {
+                        this.selectedDocs = [];
+                    } else {
+                        this.selectedDocs = this.kbDocuments.map(doc => doc.file_name);
+                    }
+                },
+                async deleteSingleDoc(fileName) {
+                    if (!confirm(`确定要删除文档 "${fileName}" 吗？`)) return;
+                    this.loading = true;
+                    try {
+                        await api.post(`/knowledge/${this.selectedKB.name}/documents/delete`, {
+                            name: this.selectedKB.name,
+                            file_names: [fileName]
+                        });
+                        await this.loadKBDocuments();
+                        await this.loadKnowledgeBases();
+                        alert('文档删除成功！');
+                    } catch (error) {
+                        console.error('删除文档失败:', error);
+                        alert('删除失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async deleteSelectedDocs() {
+                    if (this.selectedDocs.length === 0) {
+                        alert('请先选择要删除的文档');
+                        return;
+                    }
+                    if (!confirm(`确定要删除选中的 ${this.selectedDocs.length} 个文档吗？`)) return;
+                    this.loading = true;
+                    try {
+                        await api.post(`/knowledge/${this.selectedKB.name}/documents/delete`, {
+                            name: this.selectedKB.name,
+                            file_names: this.selectedDocs
+                        });
+                        await this.loadKBDocuments();
+                        await this.loadKnowledgeBases();
+                        alert('文档删除成功！');
+                    } catch (error) {
+                        console.error('删除文档失败:', error);
+                        alert('删除失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async handleAddDocFileUpload(event) {
+                    const files = Array.from(event.target.files);
+                    this.loading = true;
+                    try {
+                        for (const file of files) {
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            const response = await api.post('/knowledge/upload', formData, {
+                                headers: { 'Content-Type': 'multipart/form-data' }
+                            });
+                            if (response.data.success) {
+                                this.addDocUploadedFiles.push({
+                                    name: file.name,
+                                    size: file.size,
+                                    path: response.data.data.path
+                                });
+                            }
+                        }
+                        alert('文件上传成功！');
+                    } catch (error) {
+                        console.error('文件上传失败:', error);
+                        alert('文件上传失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                        event.target.value = '';
+                    }
+                },
+                removeAddDocUploadedFile(index) {
+                    this.addDocUploadedFiles.splice(index, 1);
+                },
+                async addDocsToKB() {
+                    if (this.addDocUploadedFiles.length === 0) {
+                        alert('请先上传文件');
+                        return;
+                    }
+                    this.loading = true;
+                    try {
+                        await api.post('/knowledge/add-documents', {
+                            name: this.addDocForm.name,
+                            chunk_size: this.addDocForm.chunk_size,
+                            chunk_overlap: this.addDocForm.chunk_overlap,
+                            embedding_model: this.addDocForm.embedding_model || undefined
+                        });
+                        await this.loadKnowledgeBases();
+                        this.closeAddDocModal();
+                        alert('文档添加成功！');
+                    } catch (error) {
+                        console.error('添加文档失败:', error);
+                        alert('添加失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async doKnowledgeQA() {
+                    if (!this.hisQA.question) {
+                        alert('请输入问题');
+                        return;
+                    }
+                    this.loading = true;
+                    try {
+                        const requestData = {
+                            question: this.hisQA.question,
+                            use_knowledge_base: this.hisQA.use_kb
+                        };
+                        if (this.hisQA.use_kb && this.hisQA.kb_name) {
+                            requestData.knowledge_base_name = this.hisQA.kb_name;
+                        }
+                        const response = await api.post('/his/knowledge-qa', requestData);
+                        this.hisQA.result = response.data.content;
+                    } catch (error) {
+                        console.error('知识问答失败:', error);
+                        this.hisQA.result = '问答失败，请检查控制台日志';
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async sendChatMessage() {
+                    if (!this.chatInput.trim() && !this.uploadedFile) {
+                        alert('请输入内容或上传文件');
+                        return;
+                    }
+                    let userMessage = this.chatInput.trim();
+                    
+                    if (this.uploadedFile) {
+                        try {
+                            const fileContent = await this.readFileContent(this.uploadedFile);
+                            userMessage = userMessage ? `${userMessage}\n\n[文件内容]\n${fileContent}` : `[文件内容]\n${fileContent}`;
+                        } catch (error) {
+                            alert('读取文件失败: ' + error.message);
+                            return;
+                        }
+                    }
+                    
+                    this.chatMessages.push({
+                        role: 'user',
+                        content: userMessage,
+                        isCode: false
+                    });
+                    this.chatInput = '';
+                    this.uploadedFile = null;
+                    this.chatLoading = true;
+                    try {
+                        const requestData = {
+                            messages: [
+                                { role: 'system', content: '你是一个专业的Java后端开发工程师，专注于HIS医疗系统开发。请根据用户的需求，提供清晰的Java代码示例和解释。如果用户请求代码，请提供完整的、可直接使用的Java代码，并遵循Spring Boot和阿里Java规范。代码示例必须使用markdown代码块格式，并指定语言为java。' },
+                                ...this.chatMessages.map(msg => ({ role: msg.role, content: msg.content }))
+                            ]
+                        };
+                        if (this.chatModelConfig !== null && this.chatModelConfig !== '') {
+                            requestData.model_config_name = this.chatModelConfig;
+                        }
+                        const response = await api.post('/llm/chat', requestData);
+                        const assistantContent = response.data.content;
+                        this.chatMessages.push({
+                            role: 'assistant',
+                            content: assistantContent
+                        });
+                    } catch (error) {
+                        console.error('对话失败:', error);
+                        this.chatMessages.push({
+                            role: 'assistant',
+                            content: '对话失败，请检查控制台日志'
+                        });
+                    } finally {
+                        this.chatLoading = false;
+                        this.saveChatHistory();
+                    }
+                },
+                saveChatHistory() {
+                    try {
+                        localStorage.setItem('hisAgent_chatHistory', JSON.stringify(this.chatMessages));
+                    } catch (e) {
+                        console.error('保存对话历史失败:', e);
+                    }
+                },
+                loadChatHistory() {
+                    try {
+                        const saved = localStorage.getItem('hisAgent_chatHistory');
+                        if (saved) {
+                            this.chatMessages = JSON.parse(saved);
+                        }
+                    } catch (e) {
+                        console.error('加载对话历史失败:', e);
+                    }
+                },
+                clearChatHistory() {
+                    if (confirm('确定要清除所有对话历史吗？')) {
+                        this.chatMessages = [];
+                        localStorage.removeItem('hisAgent_chatHistory');
+                    }
+                },
+                renderMarkdown(content) {
+                    const html = marked.parse(content);
+                    return html.replace(/<pre><code class="hljs language-([^"]*)">([\s\S]*?)<\/code><\/pre>/g, (match, lang, code) => {
+                        const buttonId = 'copy-btn-' + Math.random().toString(36).substr(2, 9);
+                        return `<div class="code-block-wrapper">
+                            <button class="copy-code-btn" id="${buttonId}" title="复制代码">
+                                <i class="bi bi-clipboard"></i>
+                                <span>复制</span>
+                            </button>
+                            <pre><code class="hljs language-${lang}">${code}</code></pre>
+                        </div>`;
+                    });
+                },
+                handleCopyCode(event) {
+                    if (event.target.classList.contains('copy-code-btn') || event.target.closest('.copy-code-btn')) {
+                        const button = event.target.classList.contains('copy-code-btn') ? event.target : event.target.closest('.copy-code-btn');
+                        const codeBlock = button.closest('.code-block-wrapper');
+                        const code = codeBlock.querySelector('code').textContent;
+                        
+                        navigator.clipboard.writeText(code).then(() => {
+                            const originalHTML = button.innerHTML;
+                            button.innerHTML = '<i class="bi bi-check"></i><span>已复制</span>';
+                            button.classList.add('copied');
+                            setTimeout(() => {
+                                button.innerHTML = originalHTML;
+                                button.classList.remove('copied');
+                            }, 2000);
+                        }).catch(err => {
+                            console.error('复制失败:', err);
+                        });
+                    }
+                },
+                handleFileSelect(event) {
+                    const files = event.target.files;
+                    if (files.length > 0) {
+                        this.uploadedFile = files[0];
+                    }
+                    event.target.value = '';
+                },
+                readFileContent(file) {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.onerror = (e) => reject(new Error('文件读取失败'));
+                        
+                        const extension = file.name.split('.').pop().toLowerCase();
+                        if (['md', 'txt', 'json', 'csv'].includes(extension)) {
+                            reader.readAsText(file);
+                        } else if (['docx', 'doc', 'xlsx', 'xls'].includes(extension)) {
+                            reader.readAsDataURL(file);
+                        } else {
+                            reject(new Error('不支持的文件类型'));
+                        }
+                    });
+                },
+                handleDocumentDrop(event) {
+                    this.documentDragging = false;
+                    const files = event.dataTransfer.files;
+                    if (files.length > 0) {
+                        this.validateAndSetDocumentFile(files[0]);
+                    }
+                },
+                handleDocumentSelect(event) {
+                    const files = event.target.files;
+                    if (files.length > 0) {
+                        this.validateAndSetDocumentFile(files[0]);
+                    }
+                },
+                handleDocumentDrop(event) {
+                    this.documentDragging = false;
+                    const files = event.dataTransfer.files;
+                    if (files.length > 0) {
+                        this.validateAndSetDocumentFile(files[0]);
+                    }
+                },
+                handleDocumentSelect(event) {
+                    const files = event.target.files;
+                    if (files.length > 0) {
+                        this.validateAndSetDocumentFile(files[0]);
+                    }
+                },
+                validateAndSetDocumentFile(file) {
+                    const allowedExtensions = ['.md', '.docx', '.doc'];
+                    const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+                    if (!allowedExtensions.includes(fileExt)) {
+                        alert('不支持的文件类型，请上传 .md, .docx 或 .doc 格式的文件');
+                        return;
+                    }
+                    this.documentFile = file;
+                },
+                async verifyAdminPassword() {
+                    if (!this.adminPassword) {
+                        this.adminError = '请输入管理员密码';
+                        return;
+                    }
+                    this.adminVerifying = true;
+                    this.adminError = '';
+                    try {
+                        const response = await api.post('/admin/config', {
+                            password: this.adminPassword
+                        });
+                        if (response.data.success) {
+                            this.adminVerified = true;
+                            await this.loadAdminConfig();
+                        }
+                    } catch (error) {
+                        console.error('密码验证失败:', error);
+                        if (error.response && error.response.status === 401) {
+                            this.adminError = '管理员密码错误';
+                        } else {
+                            this.adminError = '验证失败，请检查网络连接';
+                        }
+                    } finally {
+                        this.adminVerifying = false;
+                    }
+                },
+                async loadAdminConfig() {
+                    try {
+                        const response = await api.get('/admin/config');
+                        this.adminConfig = {
+                            chunk_size: response.data.default_chunk_size,
+                            chunk_overlap: response.data.default_chunk_overlap,
+                            top_k: response.data.default_top_k,
+                            retrieval_type: response.data.default_retrieval_type
+                        };
+                    } catch (error) {
+                        console.error('加载管理员配置失败:', error);
+                        alert('加载配置失败，请检查网络连接');
+                    }
+                },
+                async updateAdminConfig() {
+                    if (!this.adminConfig.chunk_size || this.adminConfig.chunk_size < 100 || this.adminConfig.chunk_size > 4096) {
+                        alert('Chunk Size必须在100-4096之间');
+                        return;
+                    }
+                    if (this.adminConfig.chunk_overlap === undefined || this.adminConfig.chunk_overlap < 0 || this.adminConfig.chunk_overlap > 1000) {
+                        alert('Chunk Overlap必须在0-1000之间');
+                        return;
+                    }
+                    if (!this.adminConfig.top_k || this.adminConfig.top_k < 1 || this.adminConfig.top_k > 100) {
+                        alert('Top K必须在1-100之间');
+                        return;
+                    }
+                    this.adminSaving = true;
+                    try {
+                        const response = await api.post('/admin/config', {
+                            password: this.adminPassword,
+                            default_chunk_size: this.adminConfig.chunk_size,
+                            default_chunk_overlap: this.adminConfig.chunk_overlap,
+                            default_top_k: this.adminConfig.top_k,
+                            default_retrieval_type: this.adminConfig.retrieval_type
+                        });
+                        if (response.data.success) {
+                            alert('配置更新成功！请重启服务使配置生效。');
+                            this.cancelAdminEdit();
+                        }
+                    } catch (error) {
+                        console.error('更新配置失败:', error);
+                        if (error.response && error.response.data) {
+                            alert('更新失败: ' + error.response.data.detail);
+                        } else {
+                            alert('更新失败，请检查网络连接');
+                        }
+                    } finally {
+                        this.adminSaving = false;
+                    }
+                },
+                cancelAdminEdit() {
+                    this.adminPassword = '';
+                    this.adminError = '';
+                    this.adminVerified = false;
+                    this.adminConfig = {
+                        chunk_size: 512,
+                        chunk_overlap: 50,
+                        top_k: 5,
+                        retrieval_type: 'hybrid'
+                    };
+                }
+            }
+        }).mount('#app');
+        });
+    </script>
+</body>
+</html>
