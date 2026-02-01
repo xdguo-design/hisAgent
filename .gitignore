@@ -19,3 +19,9 @@ node_modules/
 *.swp
 *.swo
 *~
+chroma_db/
+logs/
+uploads/
+*.bin
+test_output.txt
+his_agent.db
