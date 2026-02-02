@@ -123,7 +123,7 @@ class KnowledgeBaseBase(BaseModel):
     name: str = Field(..., description="知识库名称", min_length=1, max_length=100)
     path: str = Field(..., description="知识库数据路径", min_length=1)
     description: Optional[str] = Field(None, description="知识库描述")
-    embedding_model: str = Field(default="text-embedding-ada-002", description="Embedding模型")
+    embedding_model: str = Field(default="local-BAAI/bge-base-zh-v1.5", description="Embedding模型")
     chunk_size: int = Field(default=512, ge=1, description="分块大小")
     chunk_overlap: int = Field(default=50, ge=0, description="分块重叠大小")
     splitter_type: str = Field(default="sentence", description="分块类型")
@@ -195,7 +195,7 @@ class CreateIndexFromFilesRequest(BaseModel):
     description: Optional[str] = Field(None, description="知识库描述")
     chunk_size: int = Field(default=512, ge=1, description="分块大小")
     chunk_overlap: int = Field(default=50, ge=0, description="分块重叠大小")
-    embedding_model: str = Field(default="zhipuai-embedding", description="Embedding模型")
+    embedding_model: str = Field(default="local-BAAI/bge-base-zh-v1.5", description="Embedding模型")
     splitter_type: str = Field(default="sentence", description="分块类型")
 
 
@@ -360,3 +360,64 @@ class HISKnowledgeQARequest(BaseModel):
     question: str = Field(..., description="问题内容", min_length=1)
     use_knowledge_base: bool = Field(default=False, description="是否使用知识库")
     knowledge_base_name: Optional[str] = Field(None, description="知识库名称")
+
+
+# ========== Agentic RAG 相关模型 ==========
+
+class QueryTypeEnum(str, Enum):
+    """查询类型枚举"""
+    FACTUAL = "factual"
+    CONCEPTUAL = "conceptual"
+    PROCEDURAL = "procedural"
+    COMPARATIVE = "comparative"
+    ANALYTICAL = "analytical"
+    MULTI_HOP = "multi_hop"
+    AMBIGUOUS = "ambiguous"
+
+
+class RetrievalStrategyEnum(str, Enum):
+    """检索策略枚举"""
+    PRECISE = "precise"
+    BROAD = "broad"
+    HYBRID = "hybrid"
+    SEMANTIC = "semantic"
+    KEYWORD = "keyword"
+    MULTI_STAGE = "multi_stage"
+
+
+class AgenticRAGConfigRequest(BaseModel):
+    """Agentic RAG 配置请求模型"""
+    max_retrieval_rounds: int = Field(default=3, ge=1, le=10, description="最大检索轮数")
+    quality_threshold: float = Field(default=0.6, ge=0, le=1, description="质量阈值")
+    enable_task_decomposition: bool = Field(default=True, description="启用任务分解")
+    enable_self_reflection: bool = Field(default=True, description="启用自反思")
+    enable_tool_use: bool = Field(default=True, description="启用工具调用")
+    default_temperature: float = Field(default=0.3, ge=0, le=2, description="默认温度")
+    reasoning_temperature: float = Field(default=0.7, ge=0, le=2, description="推理温度")
+
+
+class AgenticRAGQueryRequest(BaseModel):
+    """Agentic RAG 查询请求模型"""
+    query: str = Field(..., description="查询内容", min_length=1)
+    knowledge_base_name: str = Field(..., description="知识库名称", min_length=1)
+    config: Optional[AgenticRAGConfigRequest] = Field(None, description="Agentic RAG配置")
+    enable_task_decomposition: Optional[bool] = Field(None, description="是否启用任务分解")
+    enable_self_reflection: Optional[bool] = Field(None, description="是否启用自反思")
+
+
+class ReasoningTrace(BaseModel):
+    """推理轨迹模型"""
+    step: str = Field(..., description="步骤名称")
+    result: Dict[str, Any] = Field(default_factory=dict, description="步骤结果")
+
+
+class AgenticRAGQueryResponse(BaseModel):
+    """Agentic RAG 查询响应模型"""
+    answer: str = Field(..., description="生成的答案")
+    sources: List[str] = Field(default_factory=list, description="检索来源列表")
+    reasoning_trace: List[ReasoningTrace] = Field(default_factory=list, description="推理轨迹")
+    quality_score: float = Field(..., description="质量得分", ge=0, le=1)
+    query_type: QueryTypeEnum = Field(..., description="查询类型")
+    strategy: RetrievalStrategyEnum = Field(..., description="使用的检索策略")
+    retrieval_rounds: int = Field(default=1, description="检索轮数")
+    need_clarification: bool = Field(default=False, description="是否需要澄清问题")

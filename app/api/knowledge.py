@@ -23,9 +23,12 @@ from app.models.schemas import (
     AddDocumentsRequest,
     DocumentInfo,
     DeleteDocumentsRequest,
-    DeleteDocumentsResponse
+    DeleteDocumentsResponse,
+    AgenticRAGQueryRequest,
+    AgenticRAGQueryResponse
 )
 from app.core.knowledge_base import knowledge_base_service
+from app.core.agentic_rag import AgenticRAG, AgenticRAGConfig
 from app.models.database import KnowledgeBase
 from app.utils.logger import setup_logger
 
@@ -866,4 +869,76 @@ async def delete_documents(name: str, request: DeleteDocumentsRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"删除文档失败: {str(e)}"
+        )
+
+
+@router.post("/{name}/agentic-query", response_model=AgenticRAGQueryResponse)
+async def agentic_query_knowledge_base(
+    name: str,
+    request: AgenticRAGQueryRequest
+):
+    """
+    Agentic RAG 查询知识库
+    
+    使用智能代理模式进行查询，支持查询路由、任务分解、动态检索和自反思。
+    
+    Args:
+        name: 知识库名称
+        request: Agentic RAG 查询请求
+    
+    Returns:
+        Agentic RAG 查询结果，包含答案、推理轨迹和质量评分
+    
+    Examples:
+        POST /api/v1/knowledge/his_knowledge/agentic-query
+        {
+            "query": "什么是HL7标准，它如何应用于HIS系统？",
+            "knowledge_base_name": "his_knowledge",
+            "config": {
+                "max_retrieval_rounds": 3,
+                "quality_threshold": 0.6,
+                "enable_task_decomposition": true,
+                "enable_self_reflection": true
+            }
+        }
+    """
+    try:
+        logger.info(f"开始 Agentic RAG 查询: knowledge_base={name}, query={request.query[:50]}...")
+        
+        if name != request.knowledge_base_name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="知识库名称不匹配"
+            )
+        
+        agentic_config = None
+        if request.config:
+            agentic_config = AgenticRAGConfig(
+                max_retrieval_rounds=request.config.max_retrieval_rounds,
+                quality_threshold=request.config.quality_threshold,
+                enable_task_decomposition=request.config.enable_task_decomposition,
+                enable_self_reflection=request.config.enable_self_reflection,
+                enable_tool_use=request.config.enable_tool_use,
+                default_temperature=request.config.default_temperature,
+                reasoning_temperature=request.config.reasoning_temperature
+            )
+        
+        agentic_rag = AgenticRAG(config=agentic_config)
+        
+        result = agentic_rag.query(
+            query=request.query,
+            knowledge_base_name=request.knowledge_base_name
+        )
+        
+        logger.info(f"Agentic RAG 查询完成: query_type={result.get('query_type')}, quality_score={result.get('quality_score')}")
+        
+        return AgenticRAGQueryResponse(**result)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Agentic RAG 查询失败: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Agentic RAG 查询失败: {str(e)}"
         )

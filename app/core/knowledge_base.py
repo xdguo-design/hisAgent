@@ -429,7 +429,7 @@ class KnowledgeBaseService:
             # 使用默认值
             chunk_size = chunk_size or settings.default_chunk_size
             chunk_overlap = chunk_overlap or settings.default_chunk_overlap
-            embedding_model = embedding_model or "zhipuai-embedding"
+            embedding_model = embedding_model or "local-BAAI/bge-base-zh-v1.5"
             
             logger.info(f"开始创建知识库索引: {name}, 路径: {data_path}, 嵌入模型: {embedding_model}")
             
@@ -947,7 +947,7 @@ class KnowledgeBaseService:
         file_paths: List[str],
         chunk_size: int = 512,
         chunk_overlap: int = 50,
-        embedding_model: str = "zhipuai-embedding",
+        embedding_model: str = "local-BAAI/bge-base-zh-v1.5",
         splitter_type: str = "sentence",
         description: Optional[str] = None,
         check_duplicates: bool = True

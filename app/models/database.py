@@ -177,7 +177,7 @@ class KnowledgeBase(Base):
     # Embedding模型名称（如text-embedding-ada-002）
     embedding_model = Column(
         String(100),
-        default="text-embedding-ada-002",
+        default="local-BAAI/bge-base-zh-v1.5",
         comment="Embedding模型"
     )
     
