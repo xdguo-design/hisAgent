@@ -82,6 +82,43 @@ app.add_middleware(
 )
 
 
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """记录所有HTTP请求"""
+    import time
+    start_time = time.time()
+    
+    # 记录请求信息
+    app_logger.info(f"========== 请求开始 ==========")
+    app_logger.info(f"方法: {request.method}")
+    app_logger.info(f"路径: {request.url.path}")
+    app_logger.info(f"查询参数: {request.url.query}")
+    app_logger.info(f"客户端: {request.client.host if request.client else 'unknown'}")
+    
+    # 获取请求体（如果是文件上传，只记录元数据）
+    if request.method in ["POST", "PUT", "PATCH"]:
+        try:
+            content_type = request.headers.get("content-type", "")
+            if "multipart/form-data" in content_type:
+                app_logger.info(f"内容类型: multipart/form-data (文件上传)")
+            else:
+                body = await request.body()
+                app_logger.info(f"请求体大小: {len(body)} bytes")
+        except Exception as e:
+            app_logger.warning(f"无法读取请求体: {e}")
+    
+    # 处理请求
+    response = await call_next(request)
+    
+    # 计算处理时间
+    process_time = time.time() - start_time
+    app_logger.info(f"状态码: {response.status_code}")
+    app_logger.info(f"处理时间: {process_time:.3f}s")
+    app_logger.info(f"========== 请求结束 ==========\n")
+    
+    return response
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """

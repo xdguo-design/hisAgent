@@ -1,0 +1,10 @@
+
+{
+    "framework": "xinference",
+    "task": "embedding",
+    "model": {
+        "type": "bge-base-zh-v1.5"
+    },
+    "allow_remote": true,
+    "pipeline": {"type": "embedding-pipeline"}
+}

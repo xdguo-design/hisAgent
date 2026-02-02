@@ -96,10 +96,59 @@ class KnowledgeBaseService:
         # 从数据库获取用户配置的默认API key
         api_key = self._get_default_api_key()
         
-        if model_name.startswith("zhipuai") or model_name == "zhipuai-embedding":
+        # 免费的本地嵌入模型（HuggingFace/ModelScope）
+        if model_name.startswith("local-"):
+            import os
+            from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+            
+            # 移除 "local-" 前缀
+            actual_model = model_name.replace("local-", "", 1)
+            logger.info(f"使用本地免费嵌入模型: {actual_model}")
+            
+            # 使用本地下载的模型（通过ModelScope下载）
+            # BGE-small-zh-v1.5 模型本地路径
+            local_model_paths = {
+                "BAAI/bge-small-zh-v1.5": os.path.join(os.getcwd(), "models", "Xorbits", "bge-small-zh-v1___5"),
+                "BAAI/bge-base-zh-v1.5": os.path.join(os.getcwd(), "models", "Xorbits", "bge-base-zh-v1___5"),
+                "BAAI/bge-large-zh-v1.5": os.path.join(os.getcwd(), "models", "Xorbits", "bge-large-zh-v1___5"),
+            }
+            
+            # 检查是否有本地模型
+            if actual_model in local_model_paths:
+                model_path = local_model_paths[actual_model]
+                if os.path.exists(model_path):
+                    logger.info(f"✅ 使用本地模型路径: {model_path}")
+                    return HuggingFaceEmbedding(
+                        model_name=model_path,
+                        query_instruction="为这个句子生成表示以用于检索相关文章：",
+                        embed_batch_size=32
+                    )
+                else:
+                    logger.warning(f"⚠️ 本地模型路径不存在: {model_path}")
+                    logger.info(f"尝试使用HuggingFace镜像下载...")
+            
+            # 如果本地模型不存在，尝试使用镜像源下载
+            logger.info(f"使用HuggingFace镜像源下载模型: {actual_model}")
+            os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
+            os.environ['TRANSFORMERS_CACHE'] = os.path.join(os.getcwd(), 'cache', 'transformers')
+            os.environ['SENTENCE_TRANSFORMERS_HOME'] = os.path.join(os.getcwd(), 'cache', 'sentence_transformers')
+            os.makedirs(os.environ['TRANSFORMERS_CACHE'], exist_ok=True)
+            os.makedirs(os.environ['SENTENCE_TRANSFORMERS_HOME'], exist_ok=True)
+            
+            return HuggingFaceEmbedding(
+                model_name=actual_model,
+                query_instruction="为这个句子生成表示以用于检索相关文章：",
+                embed_batch_size=32
+            )
+        
+        # 智谱AI嵌入模型
+        elif model_name.startswith("zhipuai") or model_name == "zhipuai-embedding":
             return ZhipuAIEmbedding(api_key=api_key, model="embedding-2")
+        
+        # OpenAI嵌入模型
         elif model_name.startswith("text-embedding"):
             return OpenAIEmbedding(api_key=settings.openai_api_key, model=model_name)
+        
         else:
             # 默认使用智谱AI
             return ZhipuAIEmbedding(api_key=api_key, model="embedding-2")
@@ -671,37 +720,92 @@ class KnowledgeBaseService:
         
         Returns:
             添加成功返回True，失败返回False
-        
-        Examples:
-            >>> from llama_index.core import Document
-            >>> service = KnowledgeBaseService()
-            >>> doc = Document(text="新文档内容")
-            >>> service.add_documents("my_kb", [doc])
         """
         try:
             index = self.load_index(index_name)
             if not index:
                 raise ValueError(f"知识库不存在: {index_name}")
             
-            # 添加文档
-            for doc in documents:
+            # 批量添加文档
+            logger.info(f"正在向知识库 {index_name} 添加 {len(documents)} 个文档...")
+            for i, doc in enumerate(documents):
                 index.insert(doc)
+                if (i + 1) % 10 == 0:
+                    logger.info(f"已添加 {i + 1}/{len(documents)} 个文档")
             
             # 更新数据库中的文档计数
             db = SessionLocal()
             try:
                 kb = db.query(KnowledgeBase).filter(KnowledgeBase.name == index_name).first()
                 if kb:
-                    kb.document_count += len(documents)
+                    # 获取实际的文档数量（去重文件名）
+                    kb.document_count = len(self.get_documents(index_name))
                     db.commit()
             finally:
                 db.close()
             
-            logger.info(f"成功添加 {len(documents)} 个文档到 {index_name}")
+            logger.info(f"成功向 {index_name} 添加文档")
             return True
             
         except Exception as e:
             logger.error(f"添加文档失败 {index_name}: {e}")
+            return False
+
+    def add_nodes(
+        self,
+        index_name: str,
+        nodes: List[Any]
+    ) -> bool:
+        """
+        向知识库添加节点
+        
+        Args:
+            index_name: 知识库名称
+            nodes: 要添加的节点列表
+        
+        Returns:
+            添加成功返回True，失败返回False
+        """
+        try:
+            logger.info(f"========== 开始添加节点到知识库 {index_name} ==========")
+            logger.info(f"节点数量: {len(nodes)}")
+            
+            index = self.load_index(index_name)
+            if not index:
+                logger.error(f"知识库不存在: {index_name}")
+                raise ValueError(f"知识库不存在: {index_name}")
+            
+            logger.info(f"知识库 {index_name} 加载成功")
+            
+            # 批量添加节点
+            logger.info(f"正在批量插入 {len(nodes)} 个节点...")
+            index.insert_nodes(nodes)
+            logger.info(f"节点插入完成")
+            
+            # 更新数据库中的文档计数
+            logger.info("更新数据库文档计数...")
+            db = SessionLocal()
+            try:
+                kb = db.query(KnowledgeBase).filter(KnowledgeBase.name == index_name).first()
+                if kb:
+                    # 获取实际文档数量
+                    documents = self.get_documents(index_name)
+                    new_count = len(documents)
+                    logger.info(f"文档计数更新: {kb.document_count} -> {new_count}")
+                    kb.document_count = new_count
+                    db.commit()
+                    logger.info("数据库更新成功")
+            except Exception as db_error:
+                logger.error(f"更新数据库失败: {db_error}")
+                db.rollback()
+            finally:
+                db.close()
+            
+            logger.info(f"========== 成功向 {index_name} 添加 {len(nodes)} 个节点 ==========")
+            return True
+            
+        except Exception as e:
+            logger.error(f"添加节点失败 {index_name}: {e}", exc_info=True)
             return False
     
     def get_documents(self, index_name: str) -> List[Dict[str, Any]]:
@@ -845,7 +949,8 @@ class KnowledgeBaseService:
         chunk_overlap: int = 50,
         embedding_model: str = "zhipuai-embedding",
         splitter_type: str = "sentence",
-        description: Optional[str] = None
+        description: Optional[str] = None,
+        check_duplicates: bool = True
     ) -> Dict[str, Any]:
         """
         从文件列表创建知识库索引
@@ -858,6 +963,7 @@ class KnowledgeBaseService:
             embedding_model: 嵌入模型名称
             splitter_type: 分块类型（sentence: 句子级, semantic: 语义级, custom: 自定义）
             description: 知识库描述
+            check_duplicates: 是否检查重复文件名
         
         Returns:
             创建结果字典，包含：
@@ -871,6 +977,19 @@ class KnowledgeBaseService:
         try:
             if not file_paths:
                 raise ValueError("文件列表为空")
+            
+            # 检查重复文件名
+            if check_duplicates:
+                file_names = [os.path.basename(f) for f in file_paths]
+                seen_names = set()
+                duplicates = []
+                for fname in file_names:
+                    if fname in seen_names:
+                        duplicates.append(fname)
+                    seen_names.add(fname)
+                
+                if duplicates:
+                    logger.warning(f"发现重复文件名: {duplicates}")
             
             # 验证文件是否存在
             valid_files = []

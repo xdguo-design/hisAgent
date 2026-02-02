@@ -7,58 +7,58 @@
     <script src="/static/js/vue.global.prod.js"></script>
     <script src="/static/js/axios.min.js"></script>
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.staticfile.org/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
-    <script src="https://cdn.staticfile.org/marked/12.0.1/marked.min.js"></script>
-    <link href="https://cdn.staticfile.org/highlight.js/11.9.0/styles/github-dark.min.css" rel="stylesheet">
-    <script src="https://cdn.staticfile.org/highlight.js/11.9.0/highlight.min.js"></script>
+    <link href="/static/css/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="/static/js/marked.min.js"></script>
+    <link href="/static/css/github-dark.min.css" rel="stylesheet">
+    <script src="/static/js/highlight.min.js"></script>
     <style>
         :root {
-            /* Modern Color Palette - Inspired by Apple & Notion */
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --primary-light: #e0e7ff;
-            --secondary: #8b5cf6;
-            --success: #10b981;
-            --success-light: #d1fae5;
-            --warning: #f59e0b;
-            --warning-light: #fef3c7;
-            --danger: #ef4444;
-            --danger-light: #fee2e2;
-            --info: #3b82f6;
-            --info-light: #dbeafe;
+            /* WeChat Style Color Palette */
+            --primary: #07c160;
+            --primary-hover: #06ad56;
+            --primary-light: #e8f7ed;
+            --secondary: #fa9d3b;
+            --success: #07c160;
+            --success-light: #e8f7ed;
+            --warning: #fa9d3b;
+            --warning-light: #fff4e6;
+            --danger: #fa5151;
+            --danger-light: #ffecec;
+            --info: #10aeff;
+            --info-light: #e6f5ff;
             
             /* Background Colors */
-            --bg-primary: #fafafa;
+            --bg-primary: #ededed;
             --bg-secondary: #ffffff;
-            --bg-tertiary: #f3f4f6;
-            --bg-hover: #f9fafb;
+            --bg-tertiary: #f7f7f7;
+            --bg-hover: #f2f2f2;
             
             /* Text Colors */
-            --text-primary: #111827;
-            --text-secondary: #6b7280;
-            --text-tertiary: #9ca3af;
+            --text-primary: #000000;
+            --text-secondary: #888888;
+            --text-tertiary: #b2b2b2;
             --text-inverse: #ffffff;
             
             /* Border Colors */
-            --border-light: #e5e7eb;
-            --border-medium: #d1d5db;
+            --border-light: #e5e5e5;
+            --border-medium: #d9d9d9;
             
             /* Shadows */
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 2px 4px 0 rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 4px 8px 0 rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 8px 16px 0 rgba(0, 0, 0, 0.12);
             
             /* Border Radius */
-            --radius-sm: 6px;
-            --radius-md: 10px;
-            --radius-lg: 14px;
-            --radius-xl: 20px;
+            --radius-sm: 4px;
+            --radius-md: 6px;
+            --radius-lg: 8px;
+            --radius-xl: 12px;
             
             /* Transitions */
             --transition-fast: 150ms ease;
-            --transition-base: 250ms ease;
-            --transition-slow: 350ms ease;
+            --transition-base: 200ms ease;
+            --transition-slow: 300ms ease;
         }
 
         * {
@@ -90,58 +90,46 @@
         }
 
         .sidebar {
-            background: linear-gradient(180deg, #1e1e2e 0%, #2d2d3f 100%);
+            background: #2e2e2e;
             min-height: 100vh;
-            padding: 24px 0;
+            padding: 20px 0;
             color: white;
-            box-shadow: var(--shadow-lg);
+            box-shadow: var(--shadow-md);
             position: relative;
             z-index: 100;
         }
 
-        .sidebar::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            opacity: 0.5;
-            pointer-events: none;
-        }
-
         .sidebar-header {
-            padding: 0 24px 32px;
+            padding: 0 20px 24px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 24px;
+            margin-bottom: 16px;
             position: relative;
         }
 
         .sidebar-header h1 {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 6px;
-            letter-spacing: -0.5px;
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            letter-spacing: 0;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .sidebar-header h1 i {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
+            background: var(--primary);
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 14px;
         }
 
         .sidebar-header p {
-            font-size: 13px;
-            opacity: 0.7;
+            font-size: 12px;
+            opacity: 0.6;
             margin: 0;
             font-weight: 400;
         }
@@ -149,16 +137,16 @@
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 14px 24px;
+            padding: 12px 20px;
             color: rgba(255, 255, 255, 0.7);
             text-decoration: none;
             cursor: pointer;
             transition: all var(--transition-base);
             border-left: 3px solid transparent;
-            margin: 2px 0;
+            margin: 1px 0;
             position: relative;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 400;
         }
 
         .nav-item::before {
@@ -169,35 +157,34 @@
             transform: translateY(-50%);
             width: 3px;
             height: 0;
-            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            background: var(--primary);
             border-radius: 0 2px 2px 0;
             transition: height var(--transition-base);
         }
 
         .nav-item:hover {
-            background: rgba(255, 255, 255, 0.08);
-            color: rgba(255, 255, 255, 0.95);
-            transform: translateX(2px);
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .nav-item:hover::before {
-            height: 50%;
+            height: 0;
         }
 
         .nav-item.active {
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.08);
             color: white;
             border-left-color: transparent;
         }
 
         .nav-item.active::before {
-            height: 70%;
+            height: 100%;
         }
 
         .nav-item i {
-            margin-right: 14px;
-            font-size: 18px;
-            width: 20px;
+            margin-right: 12px;
+            font-size: 16px;
+            width: 18px;
             text-align: center;
         }
 
@@ -359,52 +346,52 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            background: var(--primary);
             color: white;
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, var(--primary-hover) 0%, #4338ca 100%);
+            background: var(--primary-hover);
             color: white;
         }
 
         .btn-success {
-            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            background: var(--success);
             color: white;
         }
 
         .btn-success:hover {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            background: var(--primary-hover);
             color: white;
         }
 
         .btn-danger {
-            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+            background: var(--danger);
             color: white;
         }
 
         .btn-danger:hover {
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            background: #d43d3d;
             color: white;
         }
 
         .btn-warning {
-            background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+            background: var(--warning);
             color: white;
         }
 
         .btn-warning:hover {
-            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            background: #e58e35;
             color: white;
         }
 
         .btn-info {
-            background: linear-gradient(135deg, var(--info) 0%, #2563eb 100%);
+            background: var(--info);
             color: white;
         }
 
         .btn-info:hover {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            background: #0e9aed;
             color: white;
         }
 
@@ -1091,18 +1078,18 @@
         }
 
         .chat-message.user .message-content {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            background: var(--primary);
             color: white;
-            border-bottom-right-radius: 6px;
-            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 4px;
+            border-bottom-left-radius: var(--radius-lg);
         }
 
         .chat-message.assistant .message-content {
             background: var(--bg-secondary);
             color: var(--text-primary);
             border: 1px solid var(--border-light);
-            border-bottom-left-radius: 6px;
-            border-bottom-right-radius: 16px;
+            border-bottom-left-radius: 4px;
+            border-bottom-right-radius: var(--radius-lg);
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif;
         }
 
@@ -2172,10 +2159,16 @@
                         <div class="mb-3">
                             <label class="form-label">嵌入模型</label>
                             <select class="form-select" v-model="kbForm.embedding_model">
-                                <optgroup label="智谱AI嵌入模型（推荐）">
+                                <optgroup label="🆓 本地免费模型（推荐，无需API密钥）">
+                                    <option value="local-BAAI/bge-small-zh-v1.5">BGE-small-zh-v1.5（中文，快速）</option>
+                                    <option value="local-BAAI/bge-base-zh-v1.5">BGE-base-zh-v1.5（中文，平衡）</option>
+                                    <option value="local-BAAI/bge-large-zh-v1.5">BGE-large-zh-v1.5（中文，高精度）</option>
+                                    <option value="local-sentence-transformers/all-MiniLM-L6-v2">MiniLM-L6-v2（多语言，快速）</option>
+                                </optgroup>
+                                <optgroup label="智谱AI嵌入模型（需要充值）">
                                     <option value="zhipuai-embedding">zhipuai-embedding (默认)</option>
                                 </optgroup>
-                                <optgroup label="OpenAI嵌入模型">
+                                <optgroup label="OpenAI嵌入模型（需要API密钥）">
                                     <option value="text-embedding-3-large">text-embedding-3-large (最新)</option>
                                     <option value="text-embedding-3-small">text-embedding-3-small (轻量)</option>
                                     <option value="text-embedding-ada-002">text-embedding-ada-002 (经典)</option>
@@ -2194,7 +2187,16 @@
                         <div v-if="kbCreateMode === 'upload'" class="mt-3">
                             <div class="mb-3">
                                 <label class="form-label">上传文档</label>
-                                <input type="file" class="form-control" @change="handleFileUpload" multiple accept=".txt,.md,.pdf,.docx,.doc,.html,.json">
+                                <div class="d-flex gap-2 mb-2">
+                                    <button class="btn btn-outline-primary btn-sm" @click="$refs.fileInput.click()">
+                                        <i class="bi bi-file-earmark"></i> 选择文件
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm" @click="$refs.folderInput.click()">
+                                        <i class="bi bi-folder"></i> 选择文件夹
+                                    </button>
+                                </div>
+                                <input type="file" ref="fileInput" class="form-control" @change="handleFileUpload" multiple accept=".txt,.md,.pdf,.docx,.doc,.html,.json" style="display:none">
+                                <input type="file" ref="folderInput" class="form-control" @change="handleFolderUpload" webkitdirectory multiple style="display:none">
                                 <small class="text-muted">支持格式: .txt, .md, .pdf, .docx, .doc, .html, .json</small>
                             </div>
                             <div v-if="uploadedFiles.length > 0" class="mb-3">
@@ -2322,14 +2324,35 @@
                             <label class="form-label">知识库名称</label>
                             <input type="text" class="form-control" v-model="addDocForm.name" readonly>
                         </div>
+                        
                         <div class="mb-3">
-                            <label class="form-label">上传文档</label>
-                            <input type="file" class="form-control" @change="handleAddDocFileUpload" multiple accept=".txt,.md,.pdf,.docx,.doc,.html,.json">
-                            <small class="text-muted">支持格式: .txt, .md, .pdf, .docx, .doc, .html, .json</small>
+                            <label class="form-label">
+                                <span class="badge bg-primary me-2">步骤 1</span>
+                                上传文档
+                            </label>
+                            <div class="d-flex gap-2 mb-2">
+                                <button class="btn btn-outline-primary btn-sm" @click="$refs.addDocFileInput.click()" :disabled="loading">
+                                    <i class="bi bi-file-earmark"></i> 选择文件
+                                </button>
+                                <button class="btn btn-outline-success btn-sm" @click="$refs.addDocFolderInput.click()" :disabled="loading">
+                                    <i class="bi bi-folder"></i> 选择文件夹
+                                </button>
+                            </div>
+                            <input type="file" ref="addDocFileInput" class="form-control" @change="handleAddDocFileUpload" multiple accept=".txt,.md,.pdf,.docx,.doc,.html,.json,.java" style="display:none">
+                            <input type="file" ref="addDocFolderInput" class="form-control" @change="handleAddDocFolderUpload" webkitdirectory multiple accept=".txt,.md,.pdf,.docx,.doc,.html,.json,.java" style="display:none">
+                            <small class="text-muted">支持格式: .txt, .md, .pdf, .docx, .doc, .html, .json, .java（单个文件最大50MB）</small>
                         </div>
-                        <div v-if="addDocUploadedFiles.length > 0" class="mb-3">
-                            <label class="form-label">已上传文件</label>
-                            <ul class="list-group">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <span class="badge bg-success me-2">步骤 2</span>
+                                已上传文件 ({{ addDocUploadedFiles.length }})
+                            </label>
+                            <div v-if="addDocUploadedFiles.length === 0" class="alert alert-warning" style="padding: 12px 16px; font-size: 14px; background-color: #fff3cd; border-color: #ffecb5;">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <strong>请先完成步骤1：</strong>点击"选择文件"或"选择文件夹"上传文档
+                            </div>
+                            <ul v-else class="list-group">
                                 <li v-for="(file, index) in addDocUploadedFiles" :key="index" class="list-group-item d-flex justify-content-between align-items-center">
                                     <span>{{ file.name }} <small class="text-muted">({{ formatFileSize(file.size) }})</small></span>
                                     <button class="btn btn-sm btn-outline-danger" @click="removeAddDocUploadedFile(index)">
@@ -2339,6 +2362,10 @@
                             </ul>
                         </div>
                         <div class="row mt-3">
+                            <label class="form-label col-12">
+                                <span class="badge bg-info me-2">步骤 3</span>
+                                配置参数（可选）
+                            </label>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">分块大小</label>
@@ -2356,22 +2383,30 @@
                             <label class="form-label">嵌入模型（可选）</label>
                             <select class="form-select" v-model="addDocForm.embedding_model">
                                 <option value="">使用知识库原有模型</option>
-                                <optgroup label="智谱AI嵌入模型">
+                                <optgroup label="🆓 本地免费模型（推荐，无需API密钥）">
+                                    <option value="local-BAAI/bge-small-zh-v1.5">BGE-small-zh-v1.5（中文，快速）</option>
+                                    <option value="local-BAAI/bge-base-zh-v1.5">BGE-base-zh-v1.5（中文，平衡）</option>
+                                    <option value="local-BAAI/bge-large-zh-v1.5">BGE-large-zh-v1.5（中文，高精度）</option>
+                                    <option value="local-sentence-transformers/all-MiniLM-L6-v2">MiniLM-L6-v2（多语言，快速）</option>
+                                </optgroup>
+                                <optgroup label="智谱AI嵌入模型（需要充值）">
                                     <option value="zhipuai-embedding">zhipuai-embedding</option>
                                 </optgroup>
-                                <optgroup label="OpenAI嵌入模型">
+                                <optgroup label="OpenAI嵌入模型（需要API密钥）">
                                     <option value="text-embedding-3-large">text-embedding-3-large</option>
                                     <option value="text-embedding-3-small">text-embedding-3-small</option>
                                     <option value="text-embedding-ada-002">text-embedding-ada-002</option>
                                 </optgroup>
                             </select>
-                            <small class="text-muted">不指定则使用知识库原有的embedding模型</small>
+                            <small class="text-muted">推荐使用本地免费模型，无需API密钥且效果优秀</small>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" @click="closeAddDocModal">取消</button>
-                        <button type="button" class="btn btn-primary" @click="addDocsToKB()" :disabled="addDocUploadedFiles.length === 0">
-                            添加文档
+                        <button type="button" class="btn btn-secondary" @click="closeAddDocModal" :disabled="loading">取消</button>
+                        <button type="button" class="btn btn-primary" @click="addDocsToKB()" :disabled="addDocUploadedFiles.length === 0 || loading">
+                            <span v-if="loading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span v-if="addDocUploadedFiles.length === 0" class="badge bg-warning me-2">请先完成步骤1和步骤2</span>
+                            <span v-else>{{ loading ? '处理中...' : '步骤 4: 添加文档到知识库' }}</span>
                         </button>
                     </div>
                 </div>
@@ -2439,7 +2474,7 @@
 
             const api = axios.create({
                 baseURL: '/api/v1',
-                timeout: 120000
+                timeout: 600000
             });
 
             createApp({
@@ -2526,7 +2561,8 @@
                         chunk_overlap: 50,
                         top_k: 5,
                         retrieval_type: 'hybrid'
-                    }
+                    },
+                    allowedExtensions: ['.txt', '.md', '.pdf', '.docx', '.doc', '.html', '.json', '.java']
                 };
             },
             computed: {
@@ -2803,25 +2839,92 @@
                 async handleFileUpload(event) {
                     const files = Array.from(event.target.files);
                     this.loading = true;
+                    let successCount = 0;
+                    let skipCount = 0;
                     try {
                         for (const file of files) {
+                            const filename = file.name.replace(/.*[\/\\]/, '');
+                            const ext = filename.includes('.') ? filename.substring(filename.lastIndexOf('.')).toLowerCase() : '';
+                            
+                            if (!this.allowedExtensions.includes(ext)) {
+                                skipCount++;
+                                continue;
+                            }
+
+                            const existingFile = this.uploadedFiles.find(f => f.name === filename);
+                            if (existingFile) {
+                                if (!confirm(`文件 "${filename}" 已存在，是否替换？`)) {
+                                    continue;
+                                }
+                                const index = this.uploadedFiles.indexOf(existingFile);
+                                this.uploadedFiles.splice(index, 1);
+                            }
+
                             const formData = new FormData();
                             formData.append('file', file);
-                            const response = await api.post('/knowledge/upload', formData, {
-                                headers: { 'Content-Type': 'multipart/form-data' }
-                            });
+                            const response = await api.post('/knowledge/upload', formData);
                             if (response.data.success) {
                                 this.uploadedFiles.push({
-                                    name: file.name,
+                                    name: response.data.data.filename,
                                     size: file.size,
                                     path: response.data.data.path
                                 });
+                                successCount++;
                             }
                         }
-                        alert('文件上传成功！');
+                        let msg = `文件上传成功！已上传 ${successCount} 个文件`;
+                        if (skipCount > 0) msg += `，跳过 ${skipCount} 个不支持的文件`;
+                        alert(msg);
                     } catch (error) {
                         console.error('文件上传失败:', error);
                         alert('文件上传失败，请检查控制台日志');
+                    } finally {
+                        this.loading = false;
+                        event.target.value = '';
+                    }
+                },
+                async handleFolderUpload(event) {
+                    const files = Array.from(event.target.files);
+                    this.loading = true;
+                    let successCount = 0;
+                    let skipCount = 0;
+                    try {
+                        for (const file of files) {
+                            const filename = file.name.replace(/.*[\/\\]/, '');
+                            const ext = filename.includes('.') ? filename.substring(filename.lastIndexOf('.')).toLowerCase() : '';
+                            
+                            if (!this.allowedExtensions.includes(ext)) {
+                                skipCount++;
+                                continue;
+                            }
+
+                            const existingFile = this.uploadedFiles.find(f => f.name === filename);
+                            if (existingFile) {
+                                if (!confirm(`文件 "${filename}" 已存在，是否替换？`)) {
+                                    continue;
+                                }
+                                const index = this.uploadedFiles.indexOf(existingFile);
+                                this.uploadedFiles.splice(index, 1);
+                            }
+
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            const response = await api.post('/knowledge/upload', formData);
+                            if (response.data.success) {
+                                this.uploadedFiles.push({
+                                    name: response.data.data.filename,
+                                    size: file.size,
+                                    path: response.data.data.path
+                                });
+                                successCount++;
+                            }
+                        }
+                        let msg = `文件夹上传成功！已上传 ${successCount} 个文件`;
+                        if (skipCount > 0) msg += `，跳过 ${skipCount} 个不支持的文件`;
+                        alert(msg);
+                    } catch (error) {
+                        console.error('文件夹上传失败:', error);
+                        alert('文件夹上传失败，请检查控制台日志');
                     } finally {
                         this.loading = false;
                         event.target.value = '';
@@ -2867,15 +2970,27 @@
                     }
                 },
                 async rebuildKB(kb) {
-                    if (!confirm(`确定要重建知识库 "${kb.name}" 吗？`)) return;
+                    if (!confirm(`确定要重建知识库 "${kb.name}" 吗？\n\n注意：重建会删除现有索引并重新创建。`)) return;
                     this.loading = true;
                     try {
+                        console.log(`开始重建知识库: ${kb.name}`);
                         await api.post(`/knowledge/${kb.name}/rebuild`);
                         await this.loadKnowledgeBases();
                         alert('知识库重建成功！');
                     } catch (error) {
                         console.error('重建知识库失败:', error);
-                        alert('重建失败，请检查控制台日志');
+                        // 即使失败也要刷新数据，因为可能部分操作已完成
+                        await this.loadKnowledgeBases();
+                        let errorMsg = '重建知识库失败';
+                        if (error.response) {
+                            console.error('服务器响应错误:', error.response.data);
+                            errorMsg = error.response.data?.detail || errorMsg;
+                        } else if (error.request) {
+                            errorMsg = '网络错误，请检查服务器是否正常运行';
+                        } else {
+                            errorMsg = error.message || errorMsg;
+                        }
+                        alert('重建失败: ' + errorMsg);
                     } finally {
                         this.loading = false;
                     }
@@ -2986,26 +3101,129 @@
                 },
                 async handleAddDocFileUpload(event) {
                     const files = Array.from(event.target.files);
+                    console.log('handleAddDocFileUpload 被触发，文件数量:', files.length);
+                    console.log('文件列表:', files.map(f => f.name));
+                    
+                    if (files.length === 0) {
+                        console.warn('没有选择任何文件');
+                        alert('请先选择文件');
+                        return;
+                    }
+                    
                     this.loading = true;
+                    let successCount = 0;
+                    let skipCount = 0;
+                    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+                    let oversizedCount = 0;
                     try {
-                        for (const file of files) {
+                        console.log(`开始上传 ${files.length} 个文件`);
+                        for (let i = 0; i < files.length; i++) {
+                            const file = files[i];
+                            const filename = file.name.replace(/.*[\/\\]/, '');
+                            const ext = filename.includes('.') ? filename.substring(filename.lastIndexOf('.')).toLowerCase() : '';
+                            
+                            // 检查文件大小
+                            if (file.size > MAX_FILE_SIZE) {
+                                console.warn(`文件过大，跳过: ${filename} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+                                oversizedCount++;
+                                continue;
+                            }
+                            
+                            // 检查文件扩展名
+                            if (!this.allowedExtensions.includes(ext)) {
+                                skipCount++;
+                                continue;
+                            }
+
+                            const existingFile = this.addDocUploadedFiles.find(f => f.name === filename);
+                            if (existingFile) {
+                                if (!confirm(`文件 "${filename}" 已存在，是否替换？`)) {
+                                    continue;
+                                }
+                                const index = this.addDocUploadedFiles.indexOf(existingFile);
+                                this.addDocUploadedFiles.splice(index, 1);
+                            }
+
+                            console.log(`上传文件 ${i + 1}/${files.length}: ${filename} (${(file.size / 1024).toFixed(2)}KB)`);
                             const formData = new FormData();
                             formData.append('file', file);
-                            const response = await api.post('/knowledge/upload', formData, {
-                                headers: { 'Content-Type': 'multipart/form-data' }
-                            });
+                            const response = await api.post('/knowledge/upload', formData);
                             if (response.data.success) {
                                 this.addDocUploadedFiles.push({
-                                    name: file.name,
+                                    name: response.data.data.filename,
                                     size: file.size,
                                     path: response.data.data.path
                                 });
+                                successCount++;
                             }
                         }
-                        alert('文件上传成功！');
+                        let msg = `文件上传成功！已上传 ${successCount} 个文件`;
+                        if (skipCount > 0) msg += `，跳过 ${skipCount} 个不支持的文件`;
+                        if (oversizedCount > 0) msg += `，跳过 ${oversizedCount} 个过大的文件(>50MB)`;
+                        console.log(msg);
+                        console.log('当前已上传文件列表:', this.addDocUploadedFiles);
+                        alert(msg);
                     } catch (error) {
                         console.error('文件上传失败:', error);
-                        alert('文件上传失败，请检查控制台日志');
+                        let errorMsg = '文件上传失败';
+                        if (error.response) {
+                            console.error('服务器响应错误:', error.response.data);
+                            errorMsg = error.response.data?.detail || errorMsg;
+                        } else if (error.request) {
+                            console.error('网络错误，无服务器响应:', error.request);
+                            errorMsg = '网络错误，请检查服务器是否正常运行';
+                        } else {
+                            console.error('请求配置错误:', error.message);
+                            errorMsg = error.message || errorMsg;
+                        }
+                        alert('文件上传失败: ' + errorMsg);
+                    } finally {
+                        this.loading = false;
+                        event.target.value = '';
+                    }
+                },
+                async handleAddDocFolderUpload(event) {
+                    const files = Array.from(event.target.files);
+                    this.loading = true;
+                    let successCount = 0;
+                    let skipCount = 0;
+                    try {
+                        for (const file of files) {
+                            const filename = file.name.replace(/.*[\/\\]/, '');
+                            const ext = filename.includes('.') ? filename.substring(filename.lastIndexOf('.')).toLowerCase() : '';
+                            
+                            if (!this.allowedExtensions.includes(ext)) {
+                                skipCount++;
+                                continue;
+                            }
+
+                            const existingFile = this.addDocUploadedFiles.find(f => f.name === filename);
+                            if (existingFile) {
+                                if (!confirm(`文件 "${filename}" 已存在，是否替换？`)) {
+                                    continue;
+                                }
+                                const index = this.addDocUploadedFiles.indexOf(existingFile);
+                                this.addDocUploadedFiles.splice(index, 1);
+                            }
+
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            const response = await api.post('/knowledge/upload', formData);
+                            if (response.data.success) {
+                                this.addDocUploadedFiles.push({
+                                    name: response.data.data.filename,
+                                    size: file.size,
+                                    path: response.data.data.path
+                                });
+                                successCount++;
+                            }
+                        }
+                        let msg = `文件夹上传成功！已上传 ${successCount} 个文件`;
+                        if (skipCount > 0) msg += `，跳过 ${skipCount} 个不支持的文件`;
+                        alert(msg);
+                    } catch (error) {
+                        console.error('文件夹上传失败:', error);
+                        alert('文件夹上传失败，请检查控制台日志');
                     } finally {
                         this.loading = false;
                         event.target.value = '';
@@ -3021,18 +3239,31 @@
                     }
                     this.loading = true;
                     try {
-                        await api.post('/knowledge/add-documents', {
+                        console.log('开始添加文档到知识库...');
+                        const response = await api.post('/knowledge/add-documents', {
                             name: this.addDocForm.name,
                             chunk_size: this.addDocForm.chunk_size,
                             chunk_overlap: this.addDocForm.chunk_overlap,
                             embedding_model: this.addDocForm.embedding_model || undefined
                         });
+                        console.log('添加文档响应:', response.data);
                         await this.loadKnowledgeBases();
                         this.closeAddDocModal();
-                        alert('文档添加成功！');
+                        alert(response.data.message || '文档添加成功！');
                     } catch (error) {
                         console.error('添加文档失败:', error);
-                        alert('添加失败，请检查控制台日志');
+                        let errorMsg = '添加文档失败';
+                        if (error.response) {
+                            console.error('服务器响应错误:', error.response.data);
+                            errorMsg = error.response.data?.detail || errorMsg;
+                        } else if (error.request) {
+                            console.error('网络错误，无服务器响应:', error.request);
+                            errorMsg = '网络错误，请检查服务器是否正常运行';
+                        } else {
+                            console.error('请求配置错误:', error.message);
+                            errorMsg = error.message || errorMsg;
+                        }
+                        alert('添加文档失败: ' + errorMsg);
                     } finally {
                         this.loading = false;
                     }

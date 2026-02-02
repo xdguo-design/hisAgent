@@ -345,10 +345,21 @@ async def rebuild_knowledge_base(name: str):
                 detail=f"知识库不存在: {name}"
             )
         
+        # 检查数据路径是否存在
+        data_path = kb_info.get("path", "")
+        if data_path and not os.path.exists(data_path):
+            logger.warning(f"重建知识库失败: 原始数据路径不存在 - {data_path}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"无法重建知识库：原始文档路径不存在（{data_path}）。\n\n提示：\n1. 如果文件已移动或删除，请使用'添加文档'功能重新上传\n2. 如果路径发生变化，请删除知识库后重新创建"
+            )
+        
         # 删除现有索引
+        logger.info(f"删除知识库 {name} 的现有索引...")
         knowledge_base_service.delete_index(name)
         
         # 重新创建索引
+        logger.info(f"重新创建知识库 {name} 的索引...")
         result = knowledge_base_service.create_index(
             name=name,
             data_path=kb_info["path"],
@@ -401,14 +412,35 @@ async def upload_document(file: UploadFile = File(...)):
         Content-Type: multipart/form-data
     """
     try:
-        # 检查文件扩展名
-        allowed_extensions = {'.txt', '.md', '.pdf', '.docx', '.doc', '.html', '.json'}
-        file_ext = os.path.splitext(file.filename)[1].lower()
+        logger.info(f"========== 开始处理文件上传 ==========")
+        logger.info(f"文件对象: {file}")
+        logger.info(f"文件名: {file.filename}")
         
-        if file_ext not in allowed_extensions:
+        if not file.filename:
+            logger.error("文件名为空")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"不支持的文件类型: {file_ext}。支持的类型: {', '.join(allowed_extensions)}"
+                detail="文件名不能为空"
+            )
+        
+        # 检查文件扩展名
+        allowed_extensions = {'.txt', '.md', '.pdf', '.docx', '.doc', '.html', '.json', '.java'}
+        # 处理文件夹上传时可能包含路径的文件名
+        original_filename = file.filename
+        filename_only = os.path.basename(original_filename)
+        file_ext = os.path.splitext(filename_only)[1].lower()
+        
+        logger.info(f"原始文件名: {original_filename}")
+        logger.info(f"文件名: {filename_only}")
+        logger.info(f"扩展名: '{file_ext}'")
+        logger.info(f"支持的扩展名: {allowed_extensions}")
+        
+        if file_ext not in allowed_extensions:
+            error_msg = f"不支持的文件类型: '{file_ext}'，文件名: {filename_only}。仅支持: {', '.join(allowed_extensions)}"
+            logger.error(error_msg)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_msg
             )
         
         # 创建上传目录
@@ -426,13 +458,13 @@ async def upload_document(file: UploadFile = File(...)):
         
         file_size = os.path.getsize(file_path)
         
-        logger.info(f"文件上传成功: {file.filename} -> {filename} ({file_size} bytes)")
+        logger.info(f"文件上传成功: {original_filename} -> {filename} ({file_size} bytes)")
         
         return ApiResponse(
             success=True,
             message="文件上传成功",
             data=DocumentUploadResponse(
-                filename=file.filename,
+                filename=filename_only,
                 size=file_size,
                 path=file_path,
                 status="uploaded"
@@ -486,9 +518,10 @@ async def create_index_from_files(
         # 获取上传目录中的所有文件
         upload_dir = os.path.join(os.getcwd(), "uploads")
         if not os.path.exists(upload_dir):
+            logger.error(f"上传目录不存在: {upload_dir}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="上传目录不存在，请先上传文件"
+                detail="上传目录不存在，请重新上传文件"
             )
         
         file_paths = [
@@ -498,9 +531,10 @@ async def create_index_from_files(
         ]
         
         if not file_paths:
+            logger.error("在上传目录中没有找到文件")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="没有找到上传的文件"
+                detail="没有找到已上传的文件，请先选择文件并点击上传"
             )
         
         # 创建索引
@@ -511,7 +545,8 @@ async def create_index_from_files(
             chunk_overlap=request.chunk_overlap,
             embedding_model=request.embedding_model,
             splitter_type=request.splitter_type,
-            description=request.description
+            description=request.description,
+            check_duplicates=True
         )
         
         if result["success"]:
@@ -573,20 +608,25 @@ async def add_documents_to_kb(
     try:
         from llama_index.core import Document
         
+        logger.info(f"========== 开始添加文档到知识库 {request.name} ==========")
+        
         # 检查知识库是否存在
         kb = db.query(KnowledgeBase).filter(KnowledgeBase.name == request.name).first()
         if not kb:
+            logger.error(f"知识库不存在: {request.name}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"知识库不存在: {request.name}"
             )
+        logger.info(f"知识库 {request.name} 存在，当前文档数: {kb.document_count}")
         
         # 获取上传目录中的所有文件
         upload_dir = os.path.join(os.getcwd(), "uploads")
         if not os.path.exists(upload_dir):
+            logger.error(f"上传目录不存在: {upload_dir}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="上传目录不存在，请先上传文件"
+                detail="上传目录不存在，请重新上传文件"
             )
         
         file_paths = [
@@ -596,18 +636,53 @@ async def add_documents_to_kb(
         ]
         
         if not file_paths:
+            logger.error("在上传目录中没有找到文件")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="没有找到上传的文件"
+                detail="没有找到已上传的文件，请先选择文件并点击上传"
             )
+        
+        logger.info(f"找到 {len(file_paths)} 个上传文件")
+        
+        # 检查文件大小（限制单个文件50MB）
+        MAX_FILE_SIZE = 50 * 1024 * 1024
+        total_size = 0
+        valid_files = []
+        for file_path in file_paths:
+            file_size = os.path.getsize(file_path)
+            total_size += file_size
+            if file_size > MAX_FILE_SIZE:
+                logger.warning(f"文件过大，跳过: {os.path.basename(file_path)} ({file_size / 1024 / 1024:.2f}MB)")
+            else:
+                valid_files.append(file_path)
+        
+        if not valid_files:
+            logger.error("所有文件都因过大而被跳过")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"没有有效的文件（单个文件不能超过50MB）"
+            )
+        
+        logger.info(f"有效文件数: {len(valid_files)}，总大小: {total_size / 1024 / 1024:.2f}MB")
         
         # 使用知识库原有的embedding模型
         embedding_model = request.embedding_model or kb.embedding_model
         
+        # 检查重复文件名并记录
+        existing_files = set()
+        file_name_map = {}
+        for file_path in valid_files:
+            file_name = os.path.basename(file_path)
+            if file_name in existing_files:
+                logger.warning(f"发现重复文件名: {file_name}")
+            existing_files.add(file_name)
+            file_name_map[file_name] = file_path
+        
         # 加载文档
         documents = []
-        for file_path in file_paths:
+        for i, file_path in enumerate(valid_files):
             try:
+                logger.info(f"正在加载文件 {i+1}/{len(valid_files)}: {os.path.basename(file_path)}")
                 ext = os.path.splitext(file_path)[1].lower()
                 if ext == '.pdf':
                     from llama_index.core.readers import SimpleDirectoryReader
@@ -632,54 +707,61 @@ async def add_documents_to_kb(
                     from llama_index.core.readers import SimpleDirectoryReader
                     docs = SimpleDirectoryReader(input_files=[file_path]).load_data()
                     documents.extend(docs)
+                logger.info(f"文件加载成功: {os.path.basename(file_path)}，文档数: {len(documents)}")
             except Exception as e:
                 logger.warning(f"加载文件失败 {file_path}: {e}")
                 continue
         
         if not documents:
+            logger.error("所有上传的文件都加载失败或内容为空")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="没有成功加载任何文档"
+                detail="无法加载上传的文档，请检查文件格式是否正确且内容不为空"
             )
         
-        # 文档分块
-        from llama_index.core.node_parser import SentenceSplitter
-        node_parser = SentenceSplitter(
+        logger.info(f"总文档数: {len(documents)}")
+        
+        # 使用知识库服务的分块逻辑
+        logger.info("开始文档分块...")
+        nodes = knowledge_base_service._create_nodes(
+            documents=documents,
+            splitter_type=kb.splitter_type,
             chunk_size=request.chunk_size,
             chunk_overlap=request.chunk_overlap
         )
-        nodes = node_parser.get_nodes_from_documents(documents)
+        logger.info(f"文档分块完成，共 {len(nodes)} 个节点")
         
-        # 创建文档对象
-        from llama_index.core import Document
-        chunked_docs = []
-        for node in nodes:
-            chunked_docs.append(Document(text=node.text, metadata=node.metadata))
-        
-        # 添加到知识库
-        success = knowledge_base_service.add_documents(
+        # 添加节点到知识库
+        logger.info("开始将节点添加到知识库...")
+        success = knowledge_base_service.add_nodes(
             index_name=request.name,
-            documents=chunked_docs
+            nodes=nodes
         )
         
         if success:
+            # 刷新知识库信息以获取最新的文档计数
+            db.refresh(kb)
+            
             # 清理上传的文件
+            logger.info("清理上传文件...")
             for file_path in file_paths:
                 try:
                     os.remove(file_path)
                 except Exception as e:
                     logger.warning(f"清理文件失败: {file_path}, {e}")
             
+            logger.info(f"========== 文档添加完成 ==========")
             return ApiResponse(
                 success=True,
-                message=f"成功添加 {len(chunked_docs)} 个文档到知识库 {request.name}",
+                message=f"成功添加 {len(nodes)} 个节点到知识库 {request.name}",
                 data={
                     "name": request.name,
-                    "document_count": len(chunked_docs),
-                    "total_documents": kb.document_count + len(chunked_docs)
+                    "document_count": len(nodes),
+                    "total_documents": kb.document_count
                 }
             )
         else:
+            logger.error("添加节点到知识库失败")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="添加文档失败"
@@ -688,7 +770,16 @@ async def add_documents_to_kb(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"添加文档失败: {e}")
+        logger.error(f"添加文档失败: {e}", exc_info=True)
+        
+        # 检查是否是智谱AI API余额不足错误
+        error_str = str(e)
+        if '余额不足' in error_str or '429' in error_str or '1113' in error_str:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="智谱AI API余额不足或无可用资源包。请登录智谱AI平台充值或检查账户余额。"
+            )
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"添加文档失败: {str(e)}"
