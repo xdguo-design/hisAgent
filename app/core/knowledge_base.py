@@ -44,17 +44,12 @@ class KnowledgeBaseService:
         """
         初始化知识库服务
         
-        创建文本嵌入模型和ChromaDB客户端实例。
+        创建ChromaDB客户端实例，不预加载嵌入模型。
         """
-        # 从数据库获取用户配置的默认API key
-        api_key = self._get_default_api_key()
-        
-        # 默认使用智谱AI的嵌入模型
-        self.embed_model = ZhipuAIEmbedding(api_key=api_key, model="embedding-2")
         self.indices: Dict[str, VectorStoreIndex] = {}
         self.chroma_client = chromadb.PersistentClient(path=settings.chroma_persist_dir)
         
-        logger.info("知识库服务初始化成功，使用智谱AI嵌入模型")
+        logger.info("知识库服务初始化成功，将根据知识库配置动态选择嵌入模型")
     
     def _get_default_api_key(self) -> str:
         """
@@ -526,6 +521,17 @@ class KnowledgeBaseService:
                 logger.debug(f"从缓存加载索引: {name}")
                 return self.indices[name]
             
+            # 从数据库获取知识库配置
+            db = SessionLocal()
+            kb_config = None
+            try:
+                kb_config = db.query(KnowledgeBase).filter(KnowledgeBase.name == name).first()
+                if not kb_config:
+                    logger.warning(f"知识库配置不存在: {name}")
+                    return None
+            finally:
+                db.close()
+            
             # 检查集合是否存在
             collections = self.chroma_client.list_collections()
             collection_names = [col.name for col in collections]
@@ -533,6 +539,13 @@ class KnowledgeBaseService:
             if name not in collection_names:
                 logger.warning(f"知识库不存在: {name}")
                 return None
+            
+            # 获取知识库配置的嵌入模型
+            embedding_model = kb_config.embedding_model or "local-BAAI/bge-base-zh-v1.5"
+            logger.info(f"知识库 {name} 使用嵌入模型: {embedding_model}")
+            
+            # 创建嵌入模型实例
+            embed_model = self._get_embedding_model(embedding_model)
             
             # 加载索引
             chroma_collection = self.chroma_client.get_collection(name)
@@ -542,7 +555,7 @@ class KnowledgeBaseService:
             index = VectorStoreIndex.from_vector_store(
                 vector_store=vector_store,
                 storage_context=storage_context,
-                embed_model=self.embed_model
+                embed_model=embed_model
             )
             
             # 缓存索引
