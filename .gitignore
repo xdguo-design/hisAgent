@@ -25,3 +25,13 @@ uploads/
 *.bin
 test_output.txt
 his_agent.db
+docs/
+*.md
+models/
+test_kb/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.env.local
+.env.*.local

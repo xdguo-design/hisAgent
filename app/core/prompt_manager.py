@@ -77,10 +77,24 @@ class PromptManager:
             >>> template = manager.create_template(db, data)
         """
         try:
+            # 检查模板名称是否已存在
+            existing = db.query(PromptTemplate).filter(
+                PromptTemplate.name == template_data.name
+            ).first()
+            if existing:
+                raise ValueError(f"模板名称已存在: {template_data.name}")
+            
             # 提取模板变量
             variables = extract_variables_from_template(
                 template_data.user_prompt_template
             )
+            
+            # 如果新模板设置为启用，禁用所有其他模板
+            is_active = getattr(template_data, 'is_active', True)
+            if is_active:
+                db.query(PromptTemplate).filter(
+                    PromptTemplate.name != template_data.name
+                ).update({"is_active": False}, synchronize_session=False)
             
             # 创建模板实体
             template = PromptTemplate(
@@ -90,7 +104,7 @@ class PromptManager:
                 user_prompt_template=template_data.user_prompt_template,
                 description=template_data.description,
                 variables=json.dumps(variables),
-                is_active=template_data.is_active
+                is_active=is_active
             )
             
             db.add(template)
@@ -191,6 +205,25 @@ class PromptManager:
         
         return query.order_by(PromptTemplate.name).offset(skip).limit(limit).all()
     
+    def get_active_template(
+        self,
+        db
+    ) -> Optional[PromptTemplate]:
+        """
+        获取当前启用的提示词模板
+        
+        确保系统只有一个启用的提示词模板。
+        
+        Args:
+            db: 数据库会话
+        
+        Returns:
+            启用的模板对象，如果没有启用的模板则返回None
+        """
+        return db.query(PromptTemplate).filter(
+            PromptTemplate.is_active == True
+        ).first()
+    
     def update_template(
         self,
         db,
@@ -216,9 +249,14 @@ class PromptManager:
             if not template:
                 return None
             
-            # 更新字段
+            # 如果要启用此模板，先禁用所有其他模板
             update_dict = update_data.model_dump(exclude_unset=True)
+            if update_dict.get("is_active") is True and not template.is_active:
+                db.query(PromptTemplate).filter(
+                    PromptTemplate.id != template_id
+                ).update({"is_active": False}, synchronize_session=False)
             
+            # 更新字段
             for key, value in update_dict.items():
                 if hasattr(template, key):
                     if key == "user_prompt_template":
@@ -394,7 +432,7 @@ class PromptManager:
             {
                 "name": "his_code_review",
                 "category": "code_review",
-                "system_prompt": "你是一位资深的HIS系统开发专家，精通Java技术栈和医院临床业务流程。请对提供的代码进行专业的代码审查。",
+                "system_prompt": "你是一位资深的HIS系统开发专家，精通Java技术栈和医院临床业务流程。请对提供的代码进行专业的代码审查。\n\n代码审查规范：\n1. JDK版本使用17\n2. 不允许使用Lombok，所有代码必须手动编写getter/setter/构造函数等方法\n3. ORM框架必须使用Spring Data JPA，不允许使用MyBatis或其他ORM框架\n4. 代码结构必须遵循hip-base-cis-diagnose-ds项目架构（API层/FEIGN客户端层/服务实现层）\n5. DTO对象分类使用NTO(新建)、ETO(编辑)、QTO(查询)、TO(通用)规范\n6. 使用雪花算法ID生成器、Specification动态查询\n7. 定义业务异常枚举、使用BusinessAssert进行业务验证",
                 "user_prompt_template": "请审查以下代码：\n\n代码路径：{code_path}\n\n代码内容：\n{code_content}\n\n请从以下方面进行审查：\n1. 代码质量和规范性\n2. HIS业务逻辑的准确性\n3. 潜在的安全问题\n4. 性能优化建议\n5. 临床业务流程的合规性",
                 "description": "HIS代码审查提示词",
                 "is_active": False
@@ -402,7 +440,7 @@ class PromptManager:
             {
                 "name": "his_development_assistant",
                 "category": "development",
-                "system_prompt": "你是一位专业的HIS系统开发工程师，精通Java、Spring Boot、MyBatis等技术，并且深入了解医院信息系统的临床业务流程，包括门诊、住院、药房、医嘱管理等。",
+                "system_prompt": "你是一位专业的HIS系统开发工程师，专注于HIS医疗系统开发。你精通Java技术栈，并且深入了解医院信息系统的临床业务流程，包括门诊、住院、药房、医嘱管理等。\n\n请根据用户的需求，提供清晰的Java代码示例和解释。如果用户请求代码，请提供完整的、可直接使用的Java代码，并遵循Spring Boot和阿里Java规范。代码示例必须使用markdown代码块格式，并指定语言为java。\n\n重要约束：\n1. JDK版本使用17\n2. 不允许使用Lombok，所有代码必须手动编写getter/setter/构造函数等方法\n3. ORM框架必须使用Spring Data JPA，不允许使用MyBatis或其他ORM框架\n4. 代码结构必须遵循hip-base-cis-diagnose-ds项目架构（参考知识库文档），采用API层/FEIGN客户端层/服务实现层三层架构设计，包含Entity、Repository、Service、Assembler、Controller分层\n5. 对话要求调用当前的agent去回答，使用代码生成工具完成代码实现\n6. DTO对象分类使用NTO(新建)、ETO(编辑)、QTO(查询)、TO(通用)规范\n7. 使用雪花算法ID生成器、支持拼音码和五笔码检索、Specification动态查询、缓存策略\n8. 定义业务异常枚举、使用BusinessAssert进行业务验证",
                 "user_prompt_template": "需求描述：\n{requirement}\n\n背景信息：\n{context}\n\n请提供详细的开发方案，包括：\n1. 技术架构设计\n2. 数据库设计建议\n3. 核心业务逻辑实现\n4. 接口设计\n5. 注意事项（特别是临床业务相关的合规性要求）",
                 "description": "HIS开发助手",
                 "is_active": True

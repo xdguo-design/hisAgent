@@ -11,6 +11,8 @@ from app.config import settings
 from app.models.database import ModelConfig
 from app.models.schemas import ChatRequest, ChatResponse
 from app.utils.logger import setup_logger
+from app.core.agentic_rag import AgenticRAG, AgenticRAGConfig
+import httpx
 
 logger = setup_logger(__name__)
 
@@ -34,7 +36,7 @@ class LLMService:
         # GLM系列模型
         "glm-4": "智谱AI GLM-4模型，通用能力强",
         "glm-4-plus": "智谱AI GLM-4 Plus模型，性能更强",
-        "glm-4-7": "智谱AI GLM-4.7模型，最新版本",
+        "glm-4.7": "智谱AI GLM-4.7模型，最新版本",
         "glm-4-7b": "智谱AI GLM-4.7B模型，轻量级版本",
         "glm-4-9b": "智谱AI GLM-4.9B模型，中等规模",
         "glm-4-20b": "智谱AI GLM-4.20B模型，大规模版本",
@@ -98,8 +100,18 @@ class LLMService:
         Args:
             api_key: 智谱AI API密钥，如果为None则从配置文件读取
         """
-        self.client = ZhipuAI(api_key=api_key or settings.zhipuai_api_key)
+        timeout_config = httpx.Timeout(timeout=600.0, connect=10.0)
+        self.client = ZhipuAI(api_key=api_key or settings.zhipuai_api_key, timeout=timeout_config)
         self.default_model = "glm-4"
+        
+        # 初始化 Agentic RAG 实例
+        rag_config = AgenticRAGConfig(
+            enable_task_decomposition=True,
+            enable_self_reflection=True,
+            max_retrieval_rounds=2
+        )
+        self.rag = AgenticRAG(config=rag_config)
+        
         logger.info("LLM服务初始化成功")
     
     def get_model_config(self, config_name: Optional[str]) -> Dict[str, any]:
@@ -238,6 +250,7 @@ class LLMService:
                     client_kwargs["api_key"] = api_key
                 if api_base:
                     client_kwargs["base_url"] = api_base
+                client_kwargs["timeout"] = httpx.Timeout(timeout=600.0, connect=10.0)
                 client = ZhipuAI(**client_kwargs)
             
             # 调用智谱AI API
@@ -342,17 +355,19 @@ class LLMService:
         self,
         messages: List[Dict[str, str]],
         config_name: Optional[str] = None,
-        stream: bool = False
+        stream: bool = False,
+        knowledge_base_name: Optional[str] = None
     ) -> Dict:
         """
         使用指定配置进行对话
         
-        从数据库加载模型配置并进行对话。
+        从数据库加载模型配置并进行对话。如果指定了知识库,将使用RAG增强对话。
         
         Args:
             messages: 消息列表
-            config_name: 模型配置名称，如果为None则使用默认配置
+            config_name: 模型配置名称,如果为None则使用默认配置
             stream: 是否使用流式输出
+            knowledge_base_name: 知识库名称,如果指定则使用RAG查询
         
         Returns:
             对话响应结果
@@ -361,8 +376,79 @@ class LLMService:
             >>> service = LLMService()
             >>> messages = [{"role": "user", "content": "你好"}]
             >>> response = service.chat_with_config(messages, "my_config")
+            >>> # 使用知识库
+            >>> response = service.chat_with_config(messages, knowledge_base_name="my_kb")
         """
-        # 获取模型配置
+        # 如果指定了知识库,使用RAG查询
+        if knowledge_base_name:
+            try:
+                # 提取最后一条用户消息作为查询
+                user_message = ""
+                for msg in reversed(messages):
+                    if msg.get("role") == "user":
+                        user_message = msg.get("content", "")
+                        break
+                
+                if not user_message:
+                    logger.warning("未找到用户消息,使用普通对话")
+                else:
+                    logger.info(f"使用知识库 '{knowledge_base_name}' 进行RAG查询")
+                    
+                    # 使用RAG查询知识库
+                    rag_result = self.rag.query(
+                        query=user_message,
+                        knowledge_base_name=knowledge_base_name
+                    )
+                    
+                    # 构建增强的messages
+                    enhanced_messages = messages.copy()
+                    
+                    # 在最后一条用户消息后添加检索到的上下文
+                    context_items = []
+                    if rag_result.get("sources"):
+                        for i, source in enumerate(rag_result.get("sources", [])[:3], 1):
+                            context_items.append(f"[参考{i}] {source}")
+                    
+                    if context_items:
+                        context_str = "\n".join(context_items)
+                        enhanced_messages[-1]["content"] = (
+                            f"参考信息:\n{context_str}\n\n"
+                            f"用户问题: {user_message}\n\n"
+                            f"请根据参考信息回答用户的问题。"
+                        )
+                    
+                    # 获取模型配置
+                    config = self.get_model_config(config_name)
+                    
+                    # 使用增强的messages进行对话
+                    chat_params = {
+                        "messages": enhanced_messages,
+                        "model": config["model"],
+                        "temperature": config["temperature"],
+                        "max_tokens": config["max_tokens"],
+                        "top_p": config["top_p"],
+                        "stream": stream
+                    }
+                    
+                    if config["api_key"]:
+                        chat_params["api_key"] = config["api_key"]
+                    
+                    if config.get("api_base"):
+                        chat_params["api_base"] = config["api_base"]
+                    
+                    result = self.chat(**chat_params)
+                    
+                    # 添加RAG相关信息到结果
+                    result["sources"] = rag_result.get("sources", [])
+                    result["quality_score"] = rag_result.get("quality_score", 0.0)
+                    result["query_type"] = rag_result.get("query_type", "")
+                    
+                    return result
+                    
+            except Exception as e:
+                logger.error(f"RAG查询失败: {e},回退到普通对话")
+        
+        # 普通对话模式
         config = self.get_model_config(config_name)
         
         # 准备调用参数

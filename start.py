@@ -18,7 +18,7 @@ def check_requirements():
         print(f"当前版本: {sys.version}")
         sys.exit(1)
     
-    print(f"Python版本: {sys.version.split()[0]} ✓")
+    print(f"Python版本: {sys.version.split()[0]} [OK]")
     
     # 检查.env文件
     env_file = Path(".env")

@@ -343,3 +343,88 @@ async def initialize_default_templates(db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"初始化默认模板失败: {str(e)}"
         )
+
+
+@router.post("/{template_id}/activate")
+async def activate_prompt_template(
+    template_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    激活提示词模板
+    
+    将指定提示词模板设置为启用状态，同时自动禁用其他所有模板。
+    确保同一时间只有一个模板被启用。
+    
+    Args:
+        template_id: 模板ID
+    
+    Returns:
+        激活结果
+    
+    Examples:
+        POST /api/v1/prompt/1/activate
+    """
+    try:
+        template = prompt_manager.get_template_by_id(db, template_id)
+        if not template:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"模板不存在: {template_id}"
+            )
+        
+        # 使用update_template来激活（会自动禁用其他模板）
+        from app.models.schemas import PromptTemplateUpdate
+        updated = prompt_manager.update_template(
+            db,
+            template_id,
+            PromptTemplateUpdate(is_active=True)
+        )
+        
+        logger.info(f"激活提示词模板成功: {template.name}")
+        
+        return ApiResponse(
+            success=True,
+            message=f"已激活模板: {template.name}",
+            data={"template_id": template_id, "name": template.name}
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"激活提示词模板失败: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"激活提示词模板失败: {str(e)}"
+        )
+
+
+@router.get("/active/current")
+async def get_active_prompt_template(db: Session = Depends(get_db)):
+    """
+    获取当前激活的提示词模板
+    
+    Returns:
+        当前激活的提示词模板，如果没有则返回404
+    
+    Examples:
+        GET /api/v1/prompt/active/current
+    """
+    try:
+        template = prompt_manager.get_active_template(db)
+        if not template:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="没有激活的提示词模板"
+            )
+        
+        return PromptTemplateResponse.model_validate(template)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取激活提示词模板失败: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"获取激活提示词模板失败: {str(e)}"
+        )
